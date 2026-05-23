@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { MatchCard } from "@/components/MatchCard";
-import { fmtDate, stageLabel, cn } from "@/lib/utils";
+import { fmtDate, stageLabel, cn, seDayKey, sameSeDay } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, X } from "lucide-react";
@@ -14,11 +14,8 @@ export const Route = createFileRoute("/_authenticated/matches")({
 
 const STAGES = ["all","group","r16","qf","sf","third","final"] as const;
 
-function sameDay(a: Date, b: Date) {
-  return a.getFullYear() === b.getFullYear()
-    && a.getMonth() === b.getMonth()
-    && a.getDate() === b.getDate();
-}
+
+
 
 function MatchesPage() {
   const [filter, setFilter] = useState<typeof STAGES[number]>("all");
@@ -38,19 +35,19 @@ function MatchesPage() {
   // Set of days that have matches (for highlighting the calendar)
   const matchDays = useMemo(() => {
     const set = new Set<string>();
-    matches?.forEach(m => set.add(new Date(m.kickoff).toDateString()));
+    matches?.forEach(m => set.add(seDayKey(m.kickoff)));
     return set;
   }, [matches]);
 
   const filtered = (matches ?? []).filter(m => {
     if (filter !== "all" && m.stage !== filter) return false;
-    if (selectedDate && !sameDay(new Date(m.kickoff), selectedDate)) return false;
+    if (selectedDate && !sameSeDay(selectedDate, m.kickoff)) return false;
     return true;
   });
 
   const groups: Record<string, typeof filtered> = {};
   filtered.forEach(m => {
-    const k = new Date(m.kickoff).toDateString();
+    const k = seDayKey(m.kickoff);
     if (!groups[k]) groups[k] = [];
     groups[k]!.push(m);
   });
@@ -72,7 +69,7 @@ function MatchesPage() {
               selected={selectedDate}
               onSelect={(d) => { setSelectedDate(d); setPopoverOpen(false); }}
               defaultMonth={new Date(2026, 5, 11)}
-              modifiers={{ hasMatch: (d) => matchDays.has(d.toDateString()) }}
+              modifiers={{ hasMatch: (d) => matchDays.has(seDayKey(d.toISOString())) }}
               modifiersClassNames={{ hasMatch: "font-bold text-primary underline" }}
               className={cn("p-3 pointer-events-auto")}
             />
