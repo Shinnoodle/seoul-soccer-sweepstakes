@@ -58,7 +58,7 @@ export function MatchCard({ match }: { match: Match }) {
   const nameOf = (uid: string) => profiles?.find(p => p.id === uid)?.display_name ?? "Okänd";
 
   const { data: submitterIds } = useQuery({
-    queryKey: ["submitters", match.id, locked, savedAtTrigger],
+    queryKey: ["submitters", match.id, locked],
     enabled: !locked,
     queryFn: async () => {
       const { data, error } = await supabase.rpc("picked_user_ids", { _match_id: match.id });
