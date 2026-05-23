@@ -78,7 +78,7 @@ function RulesPage() {
 
       <Card title="💰 Anmälningsavgift & Prispott">
         <p className="text-sm text-muted-foreground">
-          Det kostar <strong>150 kr</strong> att delta. Swisha till{" "}
+          Det kostar <strong>150 kr</strong> att delta. Swisha till Jenny Kim
           <strong className="text-foreground">{SWISH_NUMBER}</strong> och skriv ditt namn i meddelandet.
         </p>
 
