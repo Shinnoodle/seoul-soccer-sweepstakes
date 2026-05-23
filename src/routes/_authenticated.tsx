@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, ListChecks, Trophy, User, Shield, LogOut } from "lucide-react";
+import { Calendar, ListChecks, Trophy, User, Shield, LogOut, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -49,6 +49,9 @@ function AuthLayout() {
           <Trophy className="size-5 text-primary" />
           <span className="font-bold">VM-tips 2026</span>
         </div>
+        <Link to="/rules" className="ml-auto mr-2 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg border border-border">
+          <BookOpen className="size-3.5" /> Regler
+        </Link>
         <button
           onClick={async () => { await supabase.auth.signOut(); navigate({ to: "/login" }); }}
           className="text-muted-foreground hover:text-foreground p-1"
