@@ -1,13 +1,67 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/rules")({
   component: RulesPage,
 });
 
+const ENTRY_FEE = 150;
+const SWISH_NUMBER = "0767-687974";
+
 function RulesPage() {
+  const { data: profiles } = useQuery({
+    queryKey: ["profiles-count"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("profiles").select("id");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const participants = profiles?.length ?? 0;
+  const pot = participants * ENTRY_FEE;
+  const prize1 = Math.round(pot * 0.6);
+  const prize2 = Math.round(pot * 0.3);
+  const prize3 = Math.round(pot * 0.1);
+
   return (
     <div className="p-4 space-y-6 max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold">Regler · VM-tips 2026</h1>
+
+      <section className="rounded-2xl bg-card border border-border p-4 space-y-3">
+        <h2 className="font-semibold text-lg">💰 Anmälningsavgift & Prispott</h2>
+        <p className="text-sm text-muted-foreground">
+          Det kostar <strong>150 kr</strong> att delta. Swisha till{" "}
+          <strong className="text-foreground">{SWISH_NUMBER}</strong> och skriv ditt namn i meddelandet.
+        </p>
+
+        <div className="rounded-xl bg-muted p-3 text-center space-y-1">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide">Total prispott</p>
+          <p className="text-3xl font-bold text-primary">{pot.toLocaleString("sv-SE")} kr</p>
+          <p className="text-xs text-muted-foreground">{participants} deltagare × 150 kr</p>
+        </div>
+
+        <table className="w-full text-sm mt-2">
+          <tbody>
+            <tr className="border-b border-border">
+              <td className="py-1.5">🥇 1:a plats</td>
+              <td className="text-right font-semibold">{prize1.toLocaleString("sv-SE")} kr</td>
+              <td className="text-right text-muted-foreground text-xs pl-2">60%</td>
+            </tr>
+            <tr className="border-b border-border">
+              <td className="py-1.5">🥈 2:a plats</td>
+              <td className="text-right font-semibold">{prize2.toLocaleString("sv-SE")} kr</td>
+              <td className="text-right text-muted-foreground text-xs pl-2">30%</td>
+            </tr>
+            <tr>
+              <td className="py-1.5">🥉 3:e plats</td>
+              <td className="text-right font-semibold">{prize3.toLocaleString("sv-SE")} kr</td>
+              <td className="text-right text-muted-foreground text-xs pl-2">10%</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
 
       <section className="rounded-2xl bg-card border border-border p-4 space-y-2">
         <h2 className="font-semibold text-lg">1. Före VM-start</h2>
