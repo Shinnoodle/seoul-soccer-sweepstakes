@@ -33,6 +33,32 @@ export function MatchCard({ match }: { match: Match }) {
     },
   });
 
+  const locked = new Date(match.kickoff) <= new Date();
+
+  const { data: allPicks } = useQuery({
+    queryKey: ["all-picks", match.id, locked],
+    enabled: locked,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("match_picks")
+        .select("user_id,home_score,away_score,joker")
+        .eq("match_id", match.id);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: profiles } = useQuery({
+    queryKey: ["profiles-all"],
+    enabled: locked,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("profiles").select("id,display_name");
+      if (error) throw error;
+      return data;
+    },
+  });
+  const nameOf = (uid: string) => profiles?.find(p => p.id === uid)?.display_name ?? "Okänd";
+
   const [home, setHome] = useState("");
   const [away, setAway] = useState("");
   const [joker, setJoker] = useState(false);
@@ -48,7 +74,7 @@ export function MatchCard({ match }: { match: Match }) {
     }
   }, [pick]);
 
-  const locked = new Date(match.kickoff) <= new Date();
+  // `locked` already declared above
 
   async function save() {
     if (!userId || home === "" || away === "") return;
@@ -115,6 +141,42 @@ export function MatchCard({ match }: { match: Match }) {
             </div>
           ) : (
             <p className="text-xs text-muted-foreground">Inget tips inlämnat – 0p</p>
+          )}
+
+          {allPicks && allPicks.length > 0 && (
+            <details className="mt-2 group">
+              <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground select-none">
+                Allas tips ({allPicks.length}) ▾
+              </summary>
+              <div className="mt-2 space-y-1 border-t border-border pt-2">
+                {allPicks.map(p => {
+                  let badge: { color: string; label: string } | null = null;
+                  if (match.finished && match.home_score !== null && match.away_score !== null) {
+                    const exact = p.home_score === match.home_score && p.away_score === match.away_score;
+                    const outcome = Math.sign(p.home_score - p.away_score) === Math.sign(match.home_score - match.away_score);
+                    if (exact) badge = { color: "bg-success text-success-foreground", label: "🟩" };
+                    else if (outcome) badge = { color: "bg-warning text-warning-foreground", label: "🟨" };
+                    else badge = { color: "bg-destructive text-destructive-foreground", label: "🟥" };
+                  }
+                  return (
+                    <div key={p.user_id} className="flex items-center justify-between text-sm">
+                      <span className="truncate flex items-center gap-1.5">
+                        {nameOf(p.user_id)}
+                        {p.joker && <Star className="size-3.5 text-primary fill-primary" />}
+                      </span>
+                      <span className="font-semibold flex items-center gap-2">
+                        {p.home_score}–{p.away_score}
+                        {badge && (
+                          <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full", badge.color)}>
+                            {badge.label}
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </details>
           )}
         </div>
       ) : (
