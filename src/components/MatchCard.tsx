@@ -74,7 +74,7 @@ export function MatchCard({ match }: { match: Match }) {
     }
   }, [pick]);
 
-  const locked = new Date(match.kickoff) <= new Date();
+  // `locked` already declared above
 
   async function save() {
     if (!userId || home === "" || away === "") return;
