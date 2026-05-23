@@ -57,6 +57,16 @@ export function MatchCard({ match }: { match: Match }) {
   });
   const nameOf = (uid: string) => profiles?.find(p => p.id === uid)?.display_name ?? "Okänd";
 
+  const { data: submitterIds } = useQuery({
+    queryKey: ["submitters", match.id, locked, savedAtTrigger],
+    enabled: !locked,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("picked_user_ids", { _match_id: match.id });
+      if (error) throw error;
+      return (data ?? []) as unknown as string[];
+    },
+  });
+
   const [home, setHome] = useState("");
   const [away, setAway] = useState("");
   const [joker, setJoker] = useState(false);
