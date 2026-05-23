@@ -69,7 +69,7 @@ function MatchesPage() {
               selected={selectedDate}
               onSelect={(d) => { setSelectedDate(d); setPopoverOpen(false); }}
               defaultMonth={new Date(2026, 5, 11)}
-              modifiers={{ hasMatch: (d) => matchDays.has(d.toDateString()) }}
+              modifiers={{ hasMatch: (d) => matchDays.has(seDayKey(d.toISOString())) }}
               modifiersClassNames={{ hasMatch: "font-bold text-primary underline" }}
               className={cn("p-3 pointer-events-auto")}
             />
