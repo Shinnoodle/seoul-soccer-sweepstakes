@@ -21,9 +21,8 @@ function RulesPage() {
 
   const participants = profiles?.length ?? 0;
   const pot = participants * ENTRY_FEE;
-  const prize1 = Math.round(pot * 0.6);
-  const prize2 = Math.round(pot * 0.3);
-  const prize3 = Math.round(pot * 0.1);
+  const prize1 = Math.round((pot - 300 - 150) * 0.6);
+  const prize2 = Math.round((pot - 300 - 150) * 0.3);
 
   return (
     <div className="p-4 space-y-6 max-w-2xl mx-auto">
@@ -45,22 +44,30 @@ function RulesPage() {
         <table className="w-full text-sm mt-2">
           <tbody>
             <tr className="border-b border-border">
-              <td className="py-1.5">🥇 1:a plats</td>
+              <td className="py-1.5">🥇 Totalsegrare</td>
               <td className="text-right font-semibold">{prize1.toLocaleString("sv-SE")} kr</td>
-              <td className="text-right text-muted-foreground text-xs pl-2">60%</td>
+              <td className="text-right text-muted-foreground text-xs pl-2">60% av potten</td>
             </tr>
             <tr className="border-b border-border">
-              <td className="py-1.5">🥈 2:a plats</td>
+              <td className="py-1.5">🥈 Tvåa</td>
               <td className="text-right font-semibold">{prize2.toLocaleString("sv-SE")} kr</td>
-              <td className="text-right text-muted-foreground text-xs pl-2">30%</td>
+              <td className="text-right text-muted-foreground text-xs pl-2">30% av potten</td>
+            </tr>
+            <tr className="border-b border-border">
+              <td className="py-1.5">🎯 Matchtips-kung</td>
+              <td className="text-right font-semibold">300 kr</td>
+              <td className="text-right text-muted-foreground text-xs pl-2">Fast pris</td>
             </tr>
             <tr>
-              <td className="py-1.5">🥉 3:e plats</td>
-              <td className="text-right font-semibold">{prize3.toLocaleString("sv-SE")} kr</td>
-              <td className="text-right text-muted-foreground text-xs pl-2">10%</td>
+              <td className="py-1.5">🤡 Sistaplatspris</td>
+              <td className="text-right font-semibold">150 kr</td>
+              <td className="text-right text-muted-foreground text-xs pl-2">Pengarna tillbaka</td>
             </tr>
           </tbody>
         </table>
+        <p className="text-xs text-muted-foreground pt-1">
+          Prispotten uppdateras automatiskt när fler anmäler sig.
+        </p>
       </section>
 
       <section className="rounded-2xl bg-card border border-border p-4 space-y-2">
