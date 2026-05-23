@@ -37,7 +37,6 @@ export function MatchCard({ match }: { match: Match }) {
 
   const { data: allPicks } = useQuery({
     queryKey: ["all-picks", match.id, locked],
-    enabled: locked,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("match_picks")
@@ -50,7 +49,6 @@ export function MatchCard({ match }: { match: Match }) {
 
   const { data: profiles } = useQuery({
     queryKey: ["profiles-all"],
-    enabled: locked,
     queryFn: async () => {
       const { data, error } = await supabase.from("profiles").select("id,display_name");
       if (error) throw error;
