@@ -14,9 +14,6 @@ export const Route = createFileRoute("/_authenticated/matches")({
 
 const STAGES = ["all","group","r16","qf","sf","third","final"] as const;
 
-
-
-
 function MatchesPage() {
   const [filter, setFilter] = useState<typeof STAGES[number]>("all");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
