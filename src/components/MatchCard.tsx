@@ -100,6 +100,7 @@ export function MatchCard({ match }: { match: Match }) {
       setSavedAt(Date.now());
       qc.invalidateQueries({ queryKey: ["pick", match.id, userId] });
       qc.invalidateQueries({ queryKey: ["my-picks", userId] });
+      qc.invalidateQueries({ queryKey: ["submitters", match.id, locked] });
     }
   }
 
