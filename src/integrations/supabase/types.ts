@@ -252,6 +252,7 @@ export type Database = {
       }
       longterm_points: { Args: { _user_id: string }; Returns: number }
       match_kickoff_passed: { Args: { _match_id: string }; Returns: boolean }
+      picked_user_ids: { Args: { _match_id: string }; Returns: string[] }
       tournament_started: { Args: never; Returns: boolean }
     }
     Enums: {
