@@ -35,19 +35,19 @@ function MatchesPage() {
   // Set of days that have matches (for highlighting the calendar)
   const matchDays = useMemo(() => {
     const set = new Set<string>();
-    matches?.forEach(m => set.add(new Date(m.kickoff).toDateString()));
+    matches?.forEach(m => set.add(seDayKey(m.kickoff)));
     return set;
   }, [matches]);
 
   const filtered = (matches ?? []).filter(m => {
     if (filter !== "all" && m.stage !== filter) return false;
-    if (selectedDate && !sameDay(new Date(m.kickoff), selectedDate)) return false;
+    if (selectedDate && !sameSeDay(selectedDate, m.kickoff)) return false;
     return true;
   });
 
   const groups: Record<string, typeof filtered> = {};
   filtered.forEach(m => {
-    const k = new Date(m.kickoff).toDateString();
+    const k = seDayKey(m.kickoff);
     if (!groups[k]) groups[k] = [];
     groups[k]!.push(m);
   });
