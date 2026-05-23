@@ -37,7 +37,6 @@ export function MatchCard({ match }: { match: Match }) {
 
   const { data: allPicks } = useQuery({
     queryKey: ["all-picks", match.id, locked],
-    enabled: locked,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("match_picks")
@@ -50,7 +49,6 @@ export function MatchCard({ match }: { match: Match }) {
 
   const { data: profiles } = useQuery({
     queryKey: ["profiles-all"],
-    enabled: locked,
     queryFn: async () => {
       const { data, error } = await supabase.from("profiles").select("id,display_name");
       if (error) throw error;
@@ -58,6 +56,16 @@ export function MatchCard({ match }: { match: Match }) {
     },
   });
   const nameOf = (uid: string) => profiles?.find(p => p.id === uid)?.display_name ?? "Okänd";
+
+  const { data: submitterIds } = useQuery({
+    queryKey: ["submitters", match.id, locked],
+    enabled: !locked,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("picked_user_ids", { _match_id: match.id });
+      if (error) throw error;
+      return (data ?? []) as unknown as string[];
+    },
+  });
 
   const [home, setHome] = useState("");
   const [away, setAway] = useState("");
@@ -92,6 +100,7 @@ export function MatchCard({ match }: { match: Match }) {
       setSavedAt(Date.now());
       qc.invalidateQueries({ queryKey: ["pick", match.id, userId] });
       qc.invalidateQueries({ queryKey: ["my-picks", userId] });
+      qc.invalidateQueries({ queryKey: ["submitters", match.id, locked] });
     }
   }
 
@@ -215,6 +224,25 @@ export function MatchCard({ match }: { match: Match }) {
           </div>
           {err && <p className="text-xs text-destructive">{err}</p>}
           {savedAt > 0 && !err && <p className="text-xs text-muted-foreground">Sparat ✓</p>}
+
+          {profiles && profiles.length > 0 && submitterIds && (() => {
+            const done = profiles.filter(p => submitterIds.includes(p.id));
+            const missing = profiles.filter(p => !submitterIds.includes(p.id));
+            return (
+              <div className="mt-2 pt-2 border-t border-border text-xs space-y-1">
+                <div className="flex items-start gap-1.5">
+                  <span className="text-muted-foreground shrink-0">Tippat ({done.length}):</span>
+                  <span className="text-foreground">{done.map(p => p.display_name).join(", ") || "—"}</span>
+                </div>
+                {missing.length > 0 && (
+                  <div className="flex items-start gap-1.5">
+                    <span className="text-warning shrink-0">Saknas ({missing.length}):</span>
+                    <span className="text-warning">{missing.map(p => p.display_name).join(", ")}</span>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       )}
     </div>
