@@ -33,6 +33,32 @@ export function MatchCard({ match }: { match: Match }) {
     },
   });
 
+  const locked = new Date(match.kickoff) <= new Date();
+
+  const { data: allPicks } = useQuery({
+    queryKey: ["all-picks", match.id, locked],
+    enabled: locked,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("match_picks")
+        .select("user_id,home_score,away_score,joker")
+        .eq("match_id", match.id);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: profiles } = useQuery({
+    queryKey: ["profiles-all"],
+    enabled: locked,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("profiles").select("id,display_name");
+      if (error) throw error;
+      return data;
+    },
+  });
+  const nameOf = (uid: string) => profiles?.find(p => p.id === uid)?.display_name ?? "Okänd";
+
   const [home, setHome] = useState("");
   const [away, setAway] = useState("");
   const [joker, setJoker] = useState(false);
