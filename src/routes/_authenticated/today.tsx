@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { MatchCard } from "@/components/MatchCard";
 import { fmtDate, fmtTime, stageLabel, seDayKey, cn } from "@/lib/utils";
@@ -21,6 +22,52 @@ type Match = {
   finished: boolean;
 };
 
+function useCountdown(target: Date | null) {
+  const [diff, setDiff] = useState(() => target ? target.getTime() - Date.now() : null);
+  useEffect(() => {
+    if (!target) return;
+    setDiff(target.getTime() - Date.now());
+    const interval = setInterval(() => setDiff(target.getTime() - Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, [target]);
+  if (diff === null || diff <= 0) return null;
+  const days = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  const minutes = Math.floor((diff % 3600000) / 60000);
+  const seconds = Math.floor((diff % 60000) / 1000);
+  return { days, hours, minutes, seconds };
+}
+
+function CountdownUnit({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="flex flex-col items-center">
+      <span className="text-3xl font-bold tabular-nums text-primary">
+        {String(value).padStart(2, "0")}
+      </span>
+      <span className="text-xs text-muted-foreground uppercase tracking-wide">{label}</span>
+    </div>
+  );
+}
+
+function NextMatchCountdown({ match }: { match: Match }) {
+  const countdown = useCountdown(new Date(match.kickoff));
+  if (!countdown) return null;
+  return (
+    <div className="rounded-2xl bg-card border border-border p-5 text-center space-y-3">
+      <p className="text-sm font-semibold">⚽ Nästa match om</p>
+      <div className="flex justify-center gap-5">
+        <CountdownUnit value={countdown.days} label="dagar" />
+        <CountdownUnit value={countdown.hours} label="tim" />
+        <CountdownUnit value={countdown.minutes} label="min" />
+        <CountdownUnit value={countdown.seconds} label="sek" />
+      </div>
+      <p className="text-xs text-muted-foreground">
+        {match.home_team} 🆚 {match.away_team} · {fmtDate(match.kickoff)} {fmtTime(match.kickoff)}
+      </p>
+    </div>
+  );
+}
+
 function TodayPage() {
   const today = new Date();
   const todayKey = seDayKey(today.toISOString());
@@ -32,6 +79,21 @@ function TodayPage() {
         .from("matches").select("*").order("kickoff");
       if (error) throw error;
       return (data as Match[]).filter(m => seDayKey(m.kickoff) === todayKey);
+    },
+  });
+
+  const { data: nextMatch } = useQuery({
+    queryKey: ["next-match"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("matches")
+        .select("*")
+        .gt("kickoff", new Date().toISOString())
+        .order("kickoff")
+        .limit(1)
+        .single();
+      if (error) return null;
+      return data as Match;
     },
   });
 
@@ -62,6 +124,8 @@ function TodayPage() {
   const nameOf = (uid: string) =>
     profiles?.find(p => p.id === uid)?.display_name ?? "Okänd";
 
+  const noMatchesToday = !isLoading && (!matches || matches.length === 0);
+
   return (
     <div className="p-4 space-y-6">
       <div>
@@ -69,11 +133,13 @@ function TodayPage() {
         <p className="text-sm text-muted-foreground">{fmtDate(today.toISOString())}</p>
       </div>
 
+      {noMatchesToday && nextMatch && <NextMatchCountdown match={nextMatch} />}
+
       {isLoading && <p className="text-muted-foreground">Laddar matcher...</p>}
 
-      {!isLoading && (!matches || matches.length === 0) && (
+      {noMatchesToday && !nextMatch && (
         <div className="rounded-2xl bg-card border border-border p-6 text-center">
-          <p className="text-muted-foreground">Inga matcher idag.</p>
+          <p className="text-muted-foreground">Inga fler matcher.</p>
         </div>
       )}
 
