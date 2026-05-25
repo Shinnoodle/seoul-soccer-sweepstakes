@@ -90,15 +90,22 @@ function NextMatchCountdown({ match }: { match: Match }) {
         {teamFlag(match.home_team)} {match.home_team} 🆚 {match.away_team} {teamFlag(match.away_team)} · {fmtDate(match.kickoff)} {fmtTime(match.kickoff)}
       </p>
       {profiles && profiles.length > 0 && (
-        <div className="mt-3 pt-3 border-t border-border text-xs space-y-1">
-          <div className="flex items-start gap-1.5">
-            <span className="text-muted-foreground shrink-0">Tippat ({done.length}):</span>
+        <div className="mt-2 pt-3 border-t border-border space-y-2">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <span>Tippstatus</span>
+            <span className="ml-auto rounded-full bg-success/15 text-success px-2 py-0.5">{done.length} klara</span>
+            {missing.length > 0 && (
+              <span className="rounded-full bg-warning/15 text-warning px-2 py-0.5">{missing.length} kvar</span>
+            )}
+          </div>
+          <div className="text-sm">
+            <span className="text-muted-foreground">✅ </span>
             <span className="text-foreground">{done.map(p => p.display_name).join(", ") || "—"}</span>
           </div>
           {missing.length > 0 && (
-            <div className="flex items-start gap-1.5">
-              <span className="text-warning shrink-0">Saknas ({missing.length}):</span>
-              <span className="text-warning">{missing.map(p => p.display_name).join(", ")}</span>
+            <div className="text-sm">
+              <span className="text-warning">⏳ </span>
+              <span className="text-warning font-medium">{missing.map(p => p.display_name).join(", ")}</span>
             </div>
           )}
         </div>
