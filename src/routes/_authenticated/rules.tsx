@@ -104,6 +104,7 @@ const prize2 = Math.round((pot - 300 - 200) * 0.3);
           <p>Prispotten uppdateras automatiskt när fler anmäler sig.</p>
           <p>🎯 Matchtips-kungen — flest poäng på matchtips</p>
           <p>💥 VM skrällen — flest prickade skrällmatcher</p>
+          <p>🔮 VM-Oraklet — flest poäng i förhandstips/turneringstips</p>
           <p>🤡 Jumbopriset — sista plats (med heder)</p>
         </div>
       </Card>
