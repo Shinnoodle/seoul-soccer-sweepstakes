@@ -100,10 +100,15 @@ function ProfilePage() {
     () => WC_GROUPS.filter(g => r16[g.letter]?.[1] && r16[g.letter]?.[2] && r16[g.letter]?.[3]).length,
     [r16]
   );
-const teamsSelected = useMemo(
+  const teamsSelected = useMemo(
     () => Object.values(r16).reduce((sum, g) => {
       return sum + ([1, 2, 3] as const).filter(p => g[p]).length;
     }, 0),
+    [r16]
+  );
+
+  const thirdsSelected = useMemo(
+    () => Object.values(r16).filter(g => g[3]).length,
     [r16]
   );
 
@@ -172,6 +177,15 @@ function pickTeam(letter: string, team: string, pos: 1 | 2 | 3) {
 
       // blockera om vi redan har 32 lag
       if (currentTotal >= 32) return prev;
+
+      // blockera om vi redan har 8 tredjeplatser och försöker lägga till en ny (inte ersätta befintlig)
+      if (pos === 3) {
+        const otherThirds = Object.entries(prev).reduce((sum, [l, g]) => {
+          if (l === letter) return sum;
+          return sum + (g[3] ? 1 : 0);
+        }, 0);
+        if (otherThirds >= 8 && !cur[3]) return prev;
+      }
 
       // ta bort laget från andra positioner i samma grupp
       ([1, 2, 3] as const).forEach(p => { if (p !== pos && cur[p] === team) delete cur[p]; });
@@ -273,11 +287,17 @@ function pickTeam(letter: string, team: string, pos: 1 | 2 | 3) {
       </section>
 
       <section className="rounded-2xl bg-card border border-border p-4 space-y-3">
-<div className="flex items-center justify-between">
+        <div className="flex items-center justify-between">
           <h2 className="font-semibold">Slutspelslag</h2>
-          <span className={`text-xs font-semibold ${teamsSelected === 32 ? "text-primary" : "text-muted-foreground"}`}>
-            {teamsSelected}/32 lag valda
-          </span>
+          <div className="flex items-center gap-2 text-xs font-semibold">
+            <span className={thirdsSelected === 8 ? "text-primary" : "text-muted-foreground"}>
+              {thirdsSelected}/8 tredjor
+            </span>
+            <span className="text-border">·</span>
+            <span className={teamsSelected === 32 ? "text-primary" : "text-muted-foreground"}>
+              {teamsSelected}/32 lag
+            </span>
+          </div>
         </div>
 <p className="text-xs text-muted-foreground">
           Markera per grupp: <strong className="text-foreground">👑 gruppvinnare</strong>, <strong className="text-foreground">2:a</strong> och <strong className="text-foreground">3:a</strong>.
