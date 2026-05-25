@@ -238,9 +238,10 @@ export function MatchCard({ match }: { match: Match }) {
             <p className="text-xs text-muted-foreground">Inget tips inlämnat – 0p</p>
           )}
 
-          {allPicks && allPicks.length > 0 && (
-            <AllPicksPanel picks={allPicks} match={match} nameOf={nameOf} />
-          )}
+          {allPicks && profiles && (() => {
+            const knownPicks = allPicks.filter(p => profiles.some(pr => pr.id === p.user_id));
+            return knownPicks.length > 0 && <AllPicksPanel picks={knownPicks} match={match} nameOf={nameOf} />;
+          })()}
         </div>
       ) : (
         <div className="space-y-2 pt-1">
