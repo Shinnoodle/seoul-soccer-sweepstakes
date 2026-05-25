@@ -321,9 +321,9 @@ function pickTeam(letter: string, team: string, pos: 1 | 2 | 3) {
                         <span className="truncate">{t}</span>
                       </div>
                       <div className="flex gap-1 shrink-0">
-                        {btn(1, isFirst, "👑", "bg-primary text-primary-foreground border-primary")}
-                        {btn(2, isSecond, "2", "bg-secondary text-secondary-foreground border-secondary")}
-                        {btn(3, isThird, "3", "bg-muted text-foreground border-foreground/40")}
+                        {btn(1, isFirst, "👑", "bg-amber-500/20 text-amber-400 border-amber-400/70")}
+                        {btn(2, isSecond, "2", "bg-slate-400/20 text-slate-300 border-slate-400/70")}
+                        {btn(3, isThird, "3", "bg-orange-700/20 text-orange-500 border-orange-600/70")}
                       </div>
                     </div>
                   );
