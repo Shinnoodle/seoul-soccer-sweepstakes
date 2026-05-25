@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { MatchCard } from "@/components/MatchCard";
 import { fmtDate, fmtTime, seDayKey } from "@/lib/utils";
-import { teamFlag } from "@/lib/teamFlags";
+import { TeamFlag } from "@/lib/teamFlags";
 import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/today")({
@@ -87,7 +87,7 @@ function NextMatchCountdown({ match }: { match: Match }) {
         <CountdownUnit value={countdown.seconds} label="sek" />
       </div>
       <p className="text-xs text-muted-foreground text-center">
-        {teamFlag(match.home_team)} {match.home_team} 🆚 {match.away_team} {teamFlag(match.away_team)} · {fmtDate(match.kickoff)} {fmtTime(match.kickoff)}
+        <TeamFlag name={match.home_team} /> {match.home_team} 🆚 {match.away_team} <TeamFlag name={match.away_team} /> · {fmtDate(match.kickoff)} {fmtTime(match.kickoff)}
       </p>
       {profiles && profiles.length > 0 && (
         <div className="mt-2 pt-3 border-t border-border space-y-2">

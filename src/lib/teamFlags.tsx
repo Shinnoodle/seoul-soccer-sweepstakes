@@ -96,3 +96,9 @@ export function teamFlag(name: string | null | undefined): string {
   if (!name) return "";
   return FLAGS[name.trim()] ?? "🏳️";
 }
+
+export function TeamFlag({ name, className }: { name: string | null | undefined; className?: string }) {
+  const flag = teamFlag(name);
+  if (!name) return null;
+  return <span title={name} className={className}>{flag}</span>;
+}

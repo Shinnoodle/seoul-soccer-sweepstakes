@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Trophy, Medal, Star, X, ChevronDown, Search, Locate } from "lucide-react";
-import { teamFlag } from "@/lib/teamFlags";
+import { teamFlag, TeamFlag } from "@/lib/teamFlags";
 import { fmtDate, fmtTime, stageLabel } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -449,9 +449,9 @@ function UserPicksModal({ userId, name, onClose }: { userId: string; name: strin
             <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Turneringstips</h3>
             {lt ? (
               <div className="rounded-xl bg-background/50 border border-border p-3 text-sm space-y-1">
-                <div>🏆 Vinnare: <span className="font-semibold">{teamFlag(lt.champion)} {lt.champion}</span></div>
-                <div>🥈 Finalist: <span className="font-semibold">{teamFlag(lt.runner_up)} {lt.runner_up}</span></div>
-                <div>🥉 Semi: <span className="font-semibold">{teamFlag(lt.semi1)} {lt.semi1}, {teamFlag(lt.semi2)} {lt.semi2}</span></div>
+                <div>🏆 Vinnare: <span className="font-semibold"><TeamFlag name={lt.champion} /> {lt.champion}</span></div>
+                <div>🥈 Finalist: <span className="font-semibold"><TeamFlag name={lt.runner_up} /> {lt.runner_up}</span></div>
+                <div>🥉 Semi: <span className="font-semibold"><TeamFlag name={lt.semi1} /> {lt.semi1}, <TeamFlag name={lt.semi2} /> {lt.semi2}</span></div>
                 <div>⚽ Skyttekung: <span className="font-semibold">{lt.top_scorer}</span></div>
               </div>
             ) : (
@@ -489,11 +489,11 @@ function UserPicksModal({ userId, name, onClose }: { userId: string; name: strin
                       <span>{fmtDate(m.kickoff)} {fmtTime(m.kickoff)}</span>
                     </div>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="flex-1 text-right truncate">{m.home_team} {teamFlag(m.home_team)}</span>
+                      <span className="flex-1 text-right truncate">{m.home_team} <TeamFlag name={m.home_team} /></span>
                       <span className="font-bold tabular-nums px-2 py-0.5 rounded bg-background min-w-[50px] text-center">
                         {p.home_score}–{p.away_score}
                       </span>
-                      <span className="flex-1 truncate">{teamFlag(m.away_team)} {m.away_team}</span>
+                      <span className="flex-1 truncate"><TeamFlag name={m.away_team} /> {m.away_team}</span>
                     </div>
                     {(p.joker || badge || m.finished) && (
                       <div className="flex items-center justify-end gap-2 mt-1 text-[10px]">
@@ -598,15 +598,15 @@ function LongTermPicksSection({ onPick }: { onPick: (id: string, name: string) =
               <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
                 <div>
                   <span className="text-muted-foreground">🏆 Vinnare</span>
-                  <div className="font-semibold">{teamFlag(p.champion)} {p.champion}</div>
+                  <div className="font-semibold"><TeamFlag name={p.champion} /> {p.champion}</div>
                 </div>
                 <div>
                   <span className="text-muted-foreground">🥈 Finalist</span>
-                  <div className="font-semibold">{teamFlag(p.runner_up)} {p.runner_up}</div>
+                  <div className="font-semibold"><TeamFlag name={p.runner_up} /> {p.runner_up}</div>
                 </div>
                 <div>
                   <span className="text-muted-foreground">🥉 Semifinalister</span>
-                  <div className="font-semibold">{teamFlag(p.semi1)} {p.semi1}, {teamFlag(p.semi2)} {p.semi2}</div>
+                  <div className="font-semibold"><TeamFlag name={p.semi1} /> {p.semi1}, <TeamFlag name={p.semi2} /> {p.semi2}</div>
                 </div>
                 <div>
                   <span className="text-muted-foreground">⚽ Skyttekung</span>

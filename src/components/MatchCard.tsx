@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtTime, stageLabel, cn } from "@/lib/utils";
-import { teamFlag } from "@/lib/teamFlags";
+import { TeamFlag } from "@/lib/teamFlags";
 import { Star } from "lucide-react";
 
 type PickRow = { user_id: string; home_score: number; away_score: number; joker: boolean };
@@ -235,7 +235,7 @@ export function MatchCard({
       <div className="flex items-center gap-2 text-base font-semibold">
         <span className="flex-1 text-right truncate flex items-center justify-end gap-1.5">
           <span className="truncate">{match.home_team}</span>
-          <span className="text-xl leading-none shrink-0" aria-hidden>{teamFlag(match.home_team)}</span>
+          <TeamFlag name={match.home_team} className="text-xl leading-none shrink-0" />
         </span>
         {hasResult ? (
           <span className="px-2 py-1 rounded-lg bg-background min-w-[60px] text-center">
@@ -245,7 +245,7 @@ export function MatchCard({
           <span className="text-muted-foreground text-sm">vs</span>
         )}
         <span className="flex-1 truncate flex items-center gap-1.5">
-          <span className="text-xl leading-none shrink-0" aria-hidden>{teamFlag(match.away_team)}</span>
+          <TeamFlag name={match.away_team} className="text-xl leading-none shrink-0" />
           <span className="truncate">{match.away_team}</span>
         </span>
       </div>

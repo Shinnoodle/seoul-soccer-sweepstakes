@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { WC_GROUPS } from "@/lib/wcGroups";
-import { teamFlag } from "@/lib/teamFlags";
+import { teamFlag, TeamFlag } from "@/lib/teamFlags";
 
 
 export const Route = createFileRoute("/_authenticated/profile")({
@@ -272,7 +272,7 @@ function pickTeam(letter: string, team: string, pos: 1 | 2 | 3) {
                 <span className="w-5 text-center">{icon}</span>
                 <span className="text-muted-foreground w-28 shrink-0">{label}</span>
                 <span className="font-semibold truncate">
-                  {value ? <>{showFlag && teamFlag(value)} {value}</> : "—"}
+                  {value ? <>{showFlag && <TeamFlag name={value} />} {value}</> : "—"}
                 </span>
               </div>
             ))}
@@ -362,7 +362,7 @@ function pickTeam(letter: string, team: string, pos: 1 | 2 | 3) {
                   return (
                     <div key={t} className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5 text-sm min-w-0">
-                        <span>{teamFlag(t)}</span>
+                        <TeamFlag name={t} />
                         <span className="truncate">{t}</span>
                       </div>
                       <div className="flex gap-1 shrink-0">
