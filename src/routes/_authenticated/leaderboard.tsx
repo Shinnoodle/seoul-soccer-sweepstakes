@@ -550,7 +550,6 @@ function LongTermPicksSection({ onPick }: { onPick: (id: string, name: string) =
 
   const nameOf = (uid: string) => profiles?.find(p => p.id === uid)?.display_name ?? "Okänd";
 
-  // Build map: user_id → position → sorted team flags
   const r16ByUser = useMemo(() => {
     const map = new Map<string, Record<1 | 2 | 3, { team: string; group: string }[]>>();
     for (const r of r16picks ?? []) {
@@ -566,7 +565,7 @@ function LongTermPicksSection({ onPick }: { onPick: (id: string, name: string) =
     return (
       <span className="flex flex-wrap gap-0.5">
         {teams.map(({ team, group }) => (
-          <span key={group} title={`${group}: ${team}`} className="cursor-default">
+          <span key={group} title={`${group}: ${team}`} className="cursor-default text-base">
             {teamFlag(team)}
           </span>
         ))}
@@ -587,42 +586,49 @@ function LongTermPicksSection({ onPick }: { onPick: (id: string, name: string) =
       ) : !picks || picks.length === 0 ? (
         <p className="text-sm text-muted-foreground italic">Inga tips att visa ännu.</p>
       ) : (
-        <div className="-mx-1 overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead className="text-muted-foreground">
-              <tr className="text-left">
-                <th className="px-1 py-1.5 font-medium">Namn</th>
-                <th className="px-1 py-1.5 font-medium">🏆 Vinnare</th>
-                <th className="px-1 py-1.5 font-medium">🥈 Finalist</th>
-                <th className="px-1 py-1.5 font-medium">🥉 Semi (2)</th>
-                <th className="px-1 py-1.5 font-medium">⚽ Skyttekung</th>
-                <th className="px-1 py-1.5 font-medium">👑 1:or</th>
-                <th className="px-1 py-1.5 font-medium">2:or</th>
-                <th className="px-1 py-1.5 font-medium">3:or</th>
-              </tr>
-            </thead>
-            <tbody>
-              {picks.map(p => (
-                <tr key={p.user_id} className="border-t border-border">
-                  <td className="px-1 py-1.5 font-semibold truncate max-w-[90px]">
-                    <button
-                      onClick={() => onPick(p.user_id, nameOf(p.user_id))}
-                      className="hover:text-primary underline-offset-2 hover:underline text-left"
-                    >
-                      {nameOf(p.user_id)}
-                    </button>
-                  </td>
-                  <td className="px-1 py-1.5">{teamFlag(p.champion)} {p.champion}</td>
-                  <td className="px-1 py-1.5">{teamFlag(p.runner_up)} {p.runner_up}</td>
-                  <td className="px-1 py-1.5">{teamFlag(p.semi1)} {p.semi1}, {teamFlag(p.semi2)} {p.semi2}</td>
-                  <td className="px-1 py-1.5">{p.top_scorer}</td>
-                  <td className="px-1 py-1.5">{posFlags(p.user_id, 1)}</td>
-                  <td className="px-1 py-1.5">{posFlags(p.user_id, 2)}</td>
-                  <td className="px-1 py-1.5">{posFlags(p.user_id, 3)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="space-y-3">
+          {picks.map(p => (
+            <div key={p.user_id} className="rounded-xl border border-border p-3 space-y-2">
+              <button
+                onClick={() => onPick(p.user_id, nameOf(p.user_id))}
+                className="font-semibold text-sm hover:text-primary underline-offset-2 hover:underline text-left"
+              >
+                {nameOf(p.user_id)}
+              </button>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+                <div>
+                  <span className="text-muted-foreground">🏆 Vinnare</span>
+                  <div className="font-semibold">{teamFlag(p.champion)} {p.champion}</div>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">🥈 Finalist</span>
+                  <div className="font-semibold">{teamFlag(p.runner_up)} {p.runner_up}</div>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">🥉 Semifinalister</span>
+                  <div className="font-semibold">{teamFlag(p.semi1)} {p.semi1}, {teamFlag(p.semi2)} {p.semi2}</div>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">⚽ Skyttekung</span>
+                  <div className="font-semibold">{p.top_scorer}</div>
+                </div>
+              </div>
+              <div className="border-t border-border pt-2 grid grid-cols-3 gap-2 text-xs">
+                <div>
+                  <span className="text-muted-foreground block">👑 Gruppvinnare</span>
+                  <div className="mt-0.5">{posFlags(p.user_id, 1)}</div>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block">2:or</span>
+                  <div className="mt-0.5">{posFlags(p.user_id, 2)}</div>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block">3:or</span>
+                  <div className="mt-0.5">{posFlags(p.user_id, 3)}</div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </section>
