@@ -5,6 +5,84 @@ import { fmtTime, stageLabel, cn } from "@/lib/utils";
 import { teamFlag } from "@/lib/teamFlags";
 import { Star } from "lucide-react";
 
+type PickRow = { user_id: string; home_score: number; away_score: number; joker: boolean };
+
+type AllPicksPanelProps = {
+  picks: PickRow[];
+  match: { finished: boolean; home_score: number | null; away_score: number | null };
+  nameOf: (uid: string) => string;
+};
+
+function AllPicksPanel({ picks, match, nameOf }: AllPicksPanelProps) {
+  const sign = (n: number) => (n > 0 ? 1 : n < 0 ? -1 : 0);
+  const finished = match.finished && match.home_score !== null && match.away_score !== null;
+  const actualSign = finished ? sign(match.home_score! - match.away_score!) : null;
+
+  type Tier = 0 | 1 | 2; // 0=exact, 1=correct, 2=wrong
+  const tier = (p: PickRow): Tier => {
+    if (!finished) return 2;
+    const exact = p.home_score === match.home_score && p.away_score === match.away_score;
+    if (exact) return 0;
+    if (sign(p.home_score - p.away_score) === actualSign) return 1;
+    return 2;
+  };
+
+  const sorted = finished ? [...picks].sort((a, b) => tier(a) - tier(b)) : picks;
+
+  // Outcome distribution
+  const homeWins = picks.filter(p => sign(p.home_score - p.away_score) === 1).length;
+  const draws = picks.filter(p => sign(p.home_score - p.away_score) === 0).length;
+  const awayWins = picks.filter(p => sign(p.home_score - p.away_score) === -1).length;
+  const total = picks.length;
+
+  const pct = (n: number) => Math.round((n / total) * 100);
+
+  const segColors = {
+    home: actualSign === 1 ? "bg-success" : "bg-muted-foreground/40",
+    draw: actualSign === 0 ? "bg-success" : "bg-muted-foreground/40",
+    away: actualSign === -1 ? "bg-success" : "bg-muted-foreground/40",
+  };
+
+  return (
+    <div className="mt-2 pt-2 border-t border-border space-y-2">
+      {/* Distribution bar */}
+      <div className="space-y-1">
+        <div className="flex rounded-full overflow-hidden h-2 gap-0.5">
+          {homeWins > 0 && <div className={cn("h-full transition-all", segColors.home)} style={{ width: `${pct(homeWins)}%` }} />}
+          {draws > 0 && <div className={cn("h-full transition-all", segColors.draw)} style={{ width: `${pct(draws)}%` }} />}
+          {awayWins > 0 && <div className={cn("h-full transition-all", segColors.away)} style={{ width: `${pct(awayWins)}%` }} />}
+        </div>
+        <div className="flex justify-between text-[10px] text-muted-foreground">
+          <span>Hemma {homeWins}</span>
+          <span>Oavgjort {draws}</span>
+          <span>Borta {awayWins}</span>
+        </div>
+      </div>
+
+      {/* Picks list */}
+      <div className="space-y-1">
+        {sorted.map(p => {
+          const t = tier(p);
+          const rowColor = finished
+            ? t === 0 ? "text-success" : t === 1 ? "text-warning" : "text-muted-foreground"
+            : "";
+          return (
+            <div key={p.user_id} className={cn("flex items-center justify-between text-sm", rowColor)}>
+              <span className="truncate flex items-center gap-1">
+                {nameOf(p.user_id)}
+                {p.joker && <Star className="size-3 text-primary fill-primary shrink-0" />}
+              </span>
+              <span className="font-semibold tabular-nums shrink-0 ml-2">
+                {p.home_score}–{p.away_score}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 type Match = {
   id: string;
   match_number: number;
@@ -160,39 +238,7 @@ export function MatchCard({ match }: { match: Match }) {
           )}
 
           {allPicks && allPicks.length > 0 && (
-            <details className="mt-2 group">
-              <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground select-none">
-                Allas tips ({allPicks.length}) ▾
-              </summary>
-              <div className="mt-2 space-y-1 border-t border-border pt-2">
-                {allPicks.map(p => {
-                  let badge: { color: string; label: string } | null = null;
-                  if (match.finished && match.home_score !== null && match.away_score !== null) {
-                    const exact = p.home_score === match.home_score && p.away_score === match.away_score;
-                    const outcome = Math.sign(p.home_score - p.away_score) === Math.sign(match.home_score - match.away_score);
-                    if (exact) badge = { color: "bg-success text-success-foreground", label: "Exakt" };
-                    else if (outcome) badge = { color: "bg-warning text-warning-foreground", label: "Rätt" };
-                    else badge = { color: "bg-destructive text-destructive-foreground", label: "Fel" };
-                  }
-                  return (
-                    <div key={p.user_id} className="flex items-center justify-between text-sm">
-                      <span className="truncate flex items-center gap-1.5">
-                        {nameOf(p.user_id)}
-                        {p.joker && <Star className="size-3.5 text-primary fill-primary" />}
-                      </span>
-                      <span className="font-semibold flex items-center gap-2">
-                        {p.home_score}–{p.away_score}
-                        {badge && (
-                          <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full", badge.color)}>
-                            {badge.label}
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </details>
+            <AllPicksPanel picks={allPicks} match={match} nameOf={nameOf} />
           )}
         </div>
       ) : (
