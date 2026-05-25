@@ -261,17 +261,19 @@ function pickTeam(letter: string, team: string, pos: 1 | 2 | 3) {
         {longterm && (
           <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-2">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Ditt tips</p>
-            {[
-              ["🏆", "VM-vinnare", longterm.champion],
-              ["🥈", "Finalist", longterm.runner_up],
-              ["🥉", "Semifinalist 1", longterm.semi1],
-              ["🥉", "Semifinalist 2", longterm.semi2],
-              ["⚽", "Skyttekung", longterm.top_scorer],
-            ].map(([icon, label, value]) => (
+            {([
+              ["🏆", "VM-vinnare", longterm.champion, true],
+              ["🥈", "Finalist", longterm.runner_up, true],
+              ["🥉", "Semifinalist 1", longterm.semi1, true],
+              ["🥉", "Semifinalist 2", longterm.semi2, true],
+              ["⚽", "Skyttekung", longterm.top_scorer, false],
+            ] as [string, string, string, boolean][]).map(([icon, label, value, showFlag]) => (
               <div key={label} className="flex items-center gap-2 text-sm">
                 <span className="w-5 text-center">{icon}</span>
                 <span className="text-muted-foreground w-28 shrink-0">{label}</span>
-                <span className="font-semibold truncate">{value || "—"}</span>
+                <span className="font-semibold truncate">
+                  {value ? <>{showFlag && teamFlag(value)} {value}</> : "—"}
+                </span>
               </div>
             ))}
           </div>
