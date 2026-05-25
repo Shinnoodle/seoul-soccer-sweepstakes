@@ -71,8 +71,8 @@ function RulesPage() {
 
   const participants = profiles?.length ?? 0;
   const pot = participants * ENTRY_FEE;
-const prize1 = Math.round((pot - 300 - 150) * 0.6);
-const prize2 = Math.round((pot - 300 - 150) * 0.3);
+const prize1 = Math.round((pot - 300 - 200) * 0.6);
+const prize2 = Math.round((pot - 300 - 200) * 0.3);
   const fmt = (n: number) => n.toLocaleString("sv-SE");
 
   return (
@@ -96,7 +96,7 @@ const prize2 = Math.round((pot - 300 - 150) * 0.3);
           <PrizeRow emoji="🥈" label="Tvåa" amount={`${fmt(prize2)} kr`} note="30% av potten" />
           <PrizeRow emoji="🎯" label="Matchtips-kungen" amount="300 kr" note="Fast pris" />
           <PrizeRow emoji="💥" label="VM skrällen" amount="300 kr" note="Fast pris" />
-          <PrizeRow emoji="🤡" label="Jumbopriset" amount="150 kr" note="Pengarna tillbaka" />
+          <PrizeRow emoji="🤡" label="Jumbopriset" amount="200 kr" note="Pengarna tillbaka" />
         </div>
 
 <div className="text-xs text-muted-foreground space-y-1 pt-1">
