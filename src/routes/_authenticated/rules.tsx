@@ -96,6 +96,7 @@ const prize2 = Math.round((pot - 300 - 200) * 0.3);
           <PrizeRow emoji="🥈" label="Tvåa" amount={`${fmt(prize2)} kr`} note="30% av potten" />
           <PrizeRow emoji="🎯" label="Matchtips-kungen" amount="300 kr" note="Fast pris" />
           <PrizeRow emoji="💥" label="VM skrällen" amount="300 kr" note="Fast pris" />
+          <PrizeRow emoji="🔮" label="VM-Oraklet" amount="TBD" note="Fast pris" />
           <PrizeRow emoji="🤡" label="Jumbopriset" amount="200 kr" note="Pengarna tillbaka" />
         </div>
 
