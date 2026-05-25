@@ -224,6 +224,7 @@ function TodayPage() {
           ? (ownPicksBulk.find(p => p.match_id === m.id) ?? null)
           : undefined;
         const matchAllPicks = allPicksBulk?.filter(p => p.match_id === m.id);
+        const jokerCount = ownPicksBulk?.filter(p => p.joker).length;
         return (
           <section key={m.id}>
             <MatchCard
@@ -231,6 +232,7 @@ function TodayPage() {
               userId={userId}
               ownPick={ownPick}
               allMatchPicks={matchAllPicks}
+              jokerCount={jokerCount}
               onPickSaved={() => {
                 qc.invalidateQueries({ queryKey: ["own-picks-bulk", userId, matchIdsKey] });
               }}

@@ -257,33 +257,56 @@ function pickTeam(letter: string, team: string, pos: 1 | 2 | 3) {
         <p className="text-xs text-muted-foreground">
           Vinnare 10p · Finalist 5p · Semifinalist 3p/st · Skyttekung 5p
         </p>
-        <div className="rounded-lg bg-muted/50 p-2.5 text-xs text-muted-foreground">
-          Du sätter <strong className="text-foreground">4 lag i semifinal</strong>: VM-vinnaren, finalisten
-          (förloraren i finalen) och de <strong className="text-foreground">2 lag som åker ut i semifinal</strong>.
-        </div>
-        <form onSubmit={saveLt} className="space-y-2">
-          {[
-            ["champion","🏆 VM-vinnare"],
-            ["runner_up","🥈 Finalist (förlorare i finalen)"],
-            ["semi1","🥉 Semifinalist 1 (åker ut i semi)"],
-            ["semi2","🥉 Semifinalist 2 (åker ut i semi)"],
-            ["top_scorer","⚽ Skyttekung"],
-          ].map(([key, label]) => (
-            <input key={key}
-              required maxLength={50}
-              placeholder={label}
-              value={lt[key as keyof typeof lt]}
-              disabled={started}
-              onChange={(e) => setLt(prev => ({ ...prev, [key]: e.target.value }))}
-              className="w-full rounded-xl bg-input border border-border px-3 py-2 outline-none focus:border-primary disabled:opacity-60"
-            />
-          ))}
-          <button type="submit" disabled={savingLt || started}
-            className="w-full rounded-xl bg-primary text-primary-foreground font-semibold py-2.5 disabled:opacity-50">
-            {savingLt ? "Sparar..." : "Spara"}
-          </button>
-          {ltMsg && <p className="text-sm text-muted-foreground">{ltMsg}</p>}
-        </form>
+
+        {longterm && (
+          <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Ditt tips</p>
+            {[
+              ["🏆", "VM-vinnare", longterm.champion],
+              ["🥈", "Finalist", longterm.runner_up],
+              ["🥉", "Semifinalist 1", longterm.semi1],
+              ["🥉", "Semifinalist 2", longterm.semi2],
+              ["⚽", "Skyttekung", longterm.top_scorer],
+            ].map(([icon, label, value]) => (
+              <div key={label} className="flex items-center gap-2 text-sm">
+                <span className="w-5 text-center">{icon}</span>
+                <span className="text-muted-foreground w-28 shrink-0">{label}</span>
+                <span className="font-semibold truncate">{value || "—"}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!started && (
+          <>
+            <div className="rounded-lg bg-muted/50 p-2.5 text-xs text-muted-foreground">
+              Du sätter <strong className="text-foreground">4 lag i semifinal</strong>: VM-vinnaren, finalisten
+              (förloraren i finalen) och de <strong className="text-foreground">2 lag som åker ut i semifinal</strong>.
+            </div>
+            <form onSubmit={saveLt} className="space-y-2">
+              {[
+                ["champion","🏆 VM-vinnare"],
+                ["runner_up","🥈 Finalist (förlorare i finalen)"],
+                ["semi1","🥉 Semifinalist 1 (åker ut i semi)"],
+                ["semi2","🥉 Semifinalist 2 (åker ut i semi)"],
+                ["top_scorer","⚽ Skyttekung"],
+              ].map(([key, label]) => (
+                <input key={key}
+                  required maxLength={50}
+                  placeholder={label}
+                  value={lt[key as keyof typeof lt]}
+                  onChange={(e) => setLt(prev => ({ ...prev, [key]: e.target.value }))}
+                  className="w-full rounded-xl bg-input border border-border px-3 py-2 outline-none focus:border-primary"
+                />
+              ))}
+              <button type="submit" disabled={savingLt}
+                className="w-full rounded-xl bg-primary text-primary-foreground font-semibold py-2.5 disabled:opacity-50">
+                {savingLt ? "Sparar..." : longterm ? "Uppdatera" : "Spara"}
+              </button>
+              {ltMsg && <p className="text-sm text-muted-foreground">{ltMsg}</p>}
+            </form>
+          </>
+        )}
       </section>
 
       <section className="rounded-2xl bg-card border border-border p-4 space-y-3">
@@ -368,7 +391,7 @@ function pickTeam(letter: string, team: string, pos: 1 | 2 | 3) {
       <section className="rounded-2xl bg-card border border-border p-4 space-y-2">
         <h2 className="font-semibold">Mina jokrar</h2>
         <p className="text-sm text-muted-foreground">
-          {jokerCount} / 2 jokrar använda. Sätt joker via knappen på matchkortet (innan avspark).
+          {jokerCount} / 3 jokrar använda. Sätt joker via knappen på matchkortet (innan avspark).
         </p>
         {myPicks?.filter(p => p.joker).map(p => (
           <div key={p.match_id} className="text-sm flex justify-between">

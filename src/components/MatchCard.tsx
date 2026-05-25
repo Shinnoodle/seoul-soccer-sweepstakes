@@ -103,6 +103,7 @@ export function MatchCard({
   ownPick: propOwnPick,
   allMatchPicks: propAllPicks,
   onPickSaved,
+  jokerCount,
 }: {
   match: Match;
   /** Provide from parent to skip per-card getUser() calls */
@@ -113,6 +114,8 @@ export function MatchCard({
   allMatchPicks?: PickRow[];
   /** Called after a successful save so parent can refresh its bulk cache */
   onPickSaved?: () => void;
+  /** Total saved jokers across all matches — used to enforce the 3-joker limit */
+  jokerCount?: number;
 }) {
   const qc = useQueryClient();
 
@@ -291,9 +294,12 @@ export function MatchCard({
           <div className="flex items-center justify-center gap-2">
             <button
               onClick={() => setJoker(!joker)}
+              disabled={!joker && jokerCount !== undefined && jokerCount >= 3}
+              title={!joker && jokerCount !== undefined && jokerCount >= 3 ? "Du har redan använt 3 jokrar" : undefined}
               className={cn(
                 "rounded-xl px-3 py-2 text-xs font-semibold flex items-center gap-1 border",
-                joker ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground"
+                joker ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground",
+                "disabled:opacity-40"
               )}
             >
               <Star className={cn("size-4", joker && "fill-current")} />
