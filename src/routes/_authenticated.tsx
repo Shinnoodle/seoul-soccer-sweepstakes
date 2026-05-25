@@ -14,7 +14,9 @@ function AuthLayout() {
   const [ready, setReady] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [unreadChat, setUnreadChat] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const isOnChatRef = useRef(false);
 
   useEffect(() => {
     let mounted = true;
@@ -45,6 +47,33 @@ function AuthLayout() {
   }, [menuOpen]);
 
   useEffect(() => { setMenuOpen(false); }, [location.pathname]);
+
+  useEffect(() => {
+    isOnChatRef.current = location.pathname.startsWith("/chat");
+    if (location.pathname.startsWith("/chat")) {
+      setUnreadChat(false);
+      localStorage.setItem("chat_last_seen", new Date().toISOString());
+    }
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!ready) return;
+    const lastSeen = localStorage.getItem("chat_last_seen");
+    if (lastSeen && !isOnChatRef.current) {
+      supabase
+        .from("chat_messages")
+        .select("id", { count: "exact", head: true })
+        .gt("created_at", lastSeen)
+        .then(({ count }) => { if (count && count > 0) setUnreadChat(true); });
+    }
+    const ch = supabase
+      .channel("chat_unread")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" }, () => {
+        if (!isOnChatRef.current) setUnreadChat(true);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [ready]);
 
   if (!ready) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Laddar...</div>;
 
@@ -157,7 +186,12 @@ function AuthLayout() {
                     active ? "text-primary" : "text-muted-foreground"
                   )}
                 >
-                  <Icon className="size-5" />
+                  <span className="relative">
+                    <Icon className="size-5" />
+                    {t.to === "/chat" && unreadChat && (
+                      <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-destructive" />
+                    )}
+                  </span>
                   {t.label}
                 </Link>
               </li>
