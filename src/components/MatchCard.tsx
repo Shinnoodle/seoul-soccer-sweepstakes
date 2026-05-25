@@ -112,7 +112,8 @@ export function MatchCard({ match }: { match: Match }) {
     },
   });
 
-  const locked = match.finished || new Date(match.kickoff) <= new Date();
+  const hasResult = match.home_score !== null && match.away_score !== null;
+  const locked = match.finished || hasResult || new Date(match.kickoff) <= new Date();
 
   const { data: allPicks } = useQuery({
     queryKey: ["all-picks", match.id, locked],
@@ -205,7 +206,7 @@ export function MatchCard({ match }: { match: Match }) {
           <span className="truncate">{match.home_team}</span>
           <span className="text-xl leading-none shrink-0" aria-hidden>{teamFlag(match.home_team)}</span>
         </span>
-        {match.finished ? (
+        {hasResult ? (
           <span className="px-2 py-1 rounded-lg bg-background min-w-[60px] text-center">
             {match.home_score}–{match.away_score}
           </span>
