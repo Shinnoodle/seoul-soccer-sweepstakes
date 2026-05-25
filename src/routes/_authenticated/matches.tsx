@@ -22,7 +22,7 @@ function MatchesPage() {
   const [userId, setUserId] = useState<string | null | undefined>(undefined);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
+    supabase.auth.getSession().then(({ data }) => setUserId(data.session?.user.id ?? null));
   }, []);
 
   const { data: matches, isLoading } = useQuery({

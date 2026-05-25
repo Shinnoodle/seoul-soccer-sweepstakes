@@ -16,7 +16,8 @@ function AdminPage() {
 
   useEffect(() => {
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) { navigate({ to: "/login" }); return; }
       const { data } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
       if (!data?.some(r => r.role === "admin")) { navigate({ to: "/today" }); return; }

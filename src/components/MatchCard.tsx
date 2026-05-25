@@ -122,7 +122,7 @@ export function MatchCard({
   const [internalUserId, setInternalUserId] = useState<string | null>(null);
   useEffect(() => {
     if (propUserId !== undefined) return;
-    supabase.auth.getUser().then(({ data }) => setInternalUserId(data.user?.id ?? null));
+    supabase.auth.getSession().then(({ data }) => setInternalUserId(data.session?.user.id ?? null));
   }, [propUserId]);
   const userId = propUserId !== undefined ? propUserId : internalUserId;
 

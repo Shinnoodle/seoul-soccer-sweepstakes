@@ -24,8 +24,8 @@ function ProfilePage() {
   const [ltMsg, setLtMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) setUserId(data.user.id);
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) setUserId(data.session.user.id);
     });
   }, []);
 
