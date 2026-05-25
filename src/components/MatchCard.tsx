@@ -53,9 +53,9 @@ function AllPicksPanel({ picks, match, nameOf }: AllPicksPanelProps) {
           {awayWins > 0 && <div className={cn("h-full transition-all", segColors.away)} style={{ width: `${pct(awayWins)}%` }} />}
         </div>
         <div className="flex justify-between text-[10px] text-muted-foreground">
-          <span>Hemma {homeWins}</span>
-          <span>Oavgjort {draws}</span>
-          <span>Borta {awayWins}</span>
+          <span>Hemma {homeWins} ({pct(homeWins)}%)</span>
+          <span>Oavgjort {draws} ({pct(draws)}%)</span>
+          <span>Borta {awayWins} ({pct(awayWins)}%)</span>
         </div>
       </div>
 
