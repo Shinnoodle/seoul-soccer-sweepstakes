@@ -526,6 +526,19 @@ function LongTermPicksSection({ onPick }: { onPick: (id: string, name: string) =
       return data;
     },
   });
+
+  const { data: r16picks } = useQuery({
+    queryKey: ["all-r16picks"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("r16_picks")
+        .select("user_id,group_letter,team_name,position")
+        .order("group_letter");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const { data: profiles } = useQuery({
     queryKey: ["profiles-all"],
     queryFn: async () => {
@@ -534,7 +547,32 @@ function LongTermPicksSection({ onPick }: { onPick: (id: string, name: string) =
       return data;
     },
   });
+
   const nameOf = (uid: string) => profiles?.find(p => p.id === uid)?.display_name ?? "Okänd";
+
+  // Build map: user_id → position → sorted team flags
+  const r16ByUser = useMemo(() => {
+    const map = new Map<string, Record<1 | 2 | 3, { team: string; group: string }[]>>();
+    for (const r of r16picks ?? []) {
+      if (!map.has(r.user_id)) map.set(r.user_id, { 1: [], 2: [], 3: [] });
+      map.get(r.user_id)![r.position as 1 | 2 | 3].push({ team: r.team_name, group: r.group_letter });
+    }
+    return map;
+  }, [r16picks]);
+
+  const posFlags = (uid: string, pos: 1 | 2 | 3) => {
+    const teams = r16ByUser.get(uid)?.[pos] ?? [];
+    if (teams.length === 0) return <span className="text-muted-foreground">–</span>;
+    return (
+      <span className="flex flex-wrap gap-0.5">
+        {teams.map(({ team, group }) => (
+          <span key={group} title={`${group}: ${team}`} className="cursor-default">
+            {teamFlag(team)}
+          </span>
+        ))}
+      </span>
+    );
+  };
 
   return (
     <section className="rounded-2xl bg-card border border-border p-4 space-y-3">
@@ -558,6 +596,9 @@ function LongTermPicksSection({ onPick }: { onPick: (id: string, name: string) =
                 <th className="px-1 py-1.5 font-medium">🥈 Finalist</th>
                 <th className="px-1 py-1.5 font-medium">🥉 Semi (2)</th>
                 <th className="px-1 py-1.5 font-medium">⚽ Skyttekung</th>
+                <th className="px-1 py-1.5 font-medium">👑 1:or</th>
+                <th className="px-1 py-1.5 font-medium">2:or</th>
+                <th className="px-1 py-1.5 font-medium">3:or</th>
               </tr>
             </thead>
             <tbody>
@@ -575,6 +616,9 @@ function LongTermPicksSection({ onPick }: { onPick: (id: string, name: string) =
                   <td className="px-1 py-1.5">{teamFlag(p.runner_up)} {p.runner_up}</td>
                   <td className="px-1 py-1.5">{teamFlag(p.semi1)} {p.semi1}, {teamFlag(p.semi2)} {p.semi2}</td>
                   <td className="px-1 py-1.5">{p.top_scorer}</td>
+                  <td className="px-1 py-1.5">{posFlags(p.user_id, 1)}</td>
+                  <td className="px-1 py-1.5">{posFlags(p.user_id, 2)}</td>
+                  <td className="px-1 py-1.5">{posFlags(p.user_id, 3)}</td>
                 </tr>
               ))}
             </tbody>
