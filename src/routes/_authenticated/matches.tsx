@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { MatchCard } from "@/components/MatchCard";
 import { fmtDate, stageLabel, cn, seDayKey, sameSeDay } from "@/lib/utils";
@@ -15,15 +15,61 @@ export const Route = createFileRoute("/_authenticated/matches")({
 const STAGES = ["all","group","r16","qf","quarterfinal","sf","third","final"] as const;
 
 function MatchesPage() {
+  const qc = useQueryClient();
   const [filter, setFilter] = useState<typeof STAGES[number]>("all");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [popoverOpen, setPopoverOpen] = useState(false);
+  const [userId, setUserId] = useState<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
+  }, []);
 
   const { data: matches, isLoading } = useQuery({
     queryKey: ["matches", "all"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("matches").select("*").order("kickoff");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const matchIds = useMemo(() => matches?.map(m => m.id) ?? [], [matches]);
+  const matchIdsKey = matchIds.join(",");
+
+  const lockedIds = useMemo(() => {
+    const now = new Date();
+    return (matches ?? [])
+      .filter(m => m.finished || (m.home_score !== null && m.away_score !== null) || new Date(m.kickoff) <= now)
+      .map(m => m.id);
+  }, [matches]);
+  const lockedIdsKey = lockedIds.join(",");
+
+  // One query for the current user's own picks across all matches
+  const { data: ownPicksBulk } = useQuery({
+    queryKey: ["own-picks-bulk", userId, matchIdsKey],
+    enabled: !!userId && matchIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("match_picks")
+        .select("match_id,home_score,away_score,joker")
+        .eq("user_id", userId!)
+        .in("match_id", matchIds);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // One query for all picks across all locked matches
+  const { data: allPicksBulk } = useQuery({
+    queryKey: ["all-picks-bulk", lockedIdsKey],
+    enabled: lockedIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("match_picks")
+        .select("match_id,user_id,home_score,away_score,joker")
+        .in("match_id", lockedIds);
       if (error) throw error;
       return data;
     },
@@ -110,7 +156,24 @@ function MatchesPage() {
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
             {fmtDate(list![0].kickoff)}
           </h2>
-          {list!.map(m => <MatchCard key={m.id} match={m} />)}
+          {list!.map(m => {
+            const ownPick = ownPicksBulk
+              ? (ownPicksBulk.find(p => p.match_id === m.id) ?? null)
+              : undefined;
+            const matchAllPicks = allPicksBulk?.filter(p => p.match_id === m.id);
+            return (
+              <MatchCard
+                key={m.id}
+                match={m}
+                userId={userId}
+                ownPick={ownPick}
+                allMatchPicks={matchAllPicks}
+                onPickSaved={() => {
+                  qc.invalidateQueries({ queryKey: ["own-picks-bulk", userId, matchIdsKey] });
+                }}
+              />
+            );
+          })}
         </section>
       ))}
     </div>

@@ -95,14 +95,37 @@ type Match = {
   finished: boolean;
 };
 
-export function MatchCard({ match }: { match: Match }) {
+type OwnPick = { home_score: number; away_score: number; joker: boolean };
+
+export function MatchCard({
+  match,
+  userId: propUserId,
+  ownPick: propOwnPick,
+  allMatchPicks: propAllPicks,
+  onPickSaved,
+}: {
+  match: Match;
+  /** Provide from parent to skip per-card getUser() calls */
+  userId?: string | null;
+  /** Provide from parent bulk fetch. undefined = use internal query; null = confirmed no pick */
+  ownPick?: OwnPick | null;
+  /** Provide from parent bulk fetch to skip per-card allPicks query */
+  allMatchPicks?: PickRow[];
+  /** Called after a successful save so parent can refresh its bulk cache */
+  onPickSaved?: () => void;
+}) {
   const qc = useQueryClient();
-  const [userId, setUserId] = useState<string | null>(null);
-  useEffect(() => { supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null)); }, []);
+
+  const [internalUserId, setInternalUserId] = useState<string | null>(null);
+  useEffect(() => {
+    if (propUserId !== undefined) return;
+    supabase.auth.getUser().then(({ data }) => setInternalUserId(data.user?.id ?? null));
+  }, [propUserId]);
+  const userId = propUserId !== undefined ? propUserId : internalUserId;
 
   const { data: pick } = useQuery({
     queryKey: ["pick", match.id, userId],
-    enabled: !!userId,
+    enabled: !!userId && propOwnPick === undefined,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("match_picks").select("*")
@@ -112,11 +135,15 @@ export function MatchCard({ match }: { match: Match }) {
     },
   });
 
+  const effectivePick: OwnPick | null | undefined =
+    propOwnPick !== undefined ? propOwnPick : pick;
+
   const hasResult = match.home_score !== null && match.away_score !== null;
   const locked = match.finished || hasResult || new Date(match.kickoff) <= new Date();
 
-  const { data: allPicks } = useQuery({
+  const { data: allPicksQuery } = useQuery({
     queryKey: ["all-picks", match.id, locked],
+    enabled: locked && propAllPicks === undefined,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("match_picks")
@@ -126,6 +153,8 @@ export function MatchCard({ match }: { match: Match }) {
       return data;
     },
   });
+
+  const allPicks = propAllPicks ?? allPicksQuery;
 
   const { data: profiles } = useQuery({
     queryKey: ["profiles-all"],
@@ -155,14 +184,12 @@ export function MatchCard({ match }: { match: Match }) {
   const [savedAt, setSavedAt] = useState<number>(0);
 
   useEffect(() => {
-    if (pick) {
-      setHome(pick.home_score.toString());
-      setAway(pick.away_score.toString());
-      setJoker(pick.joker);
+    if (effectivePick) {
+      setHome(effectivePick.home_score.toString());
+      setAway(effectivePick.away_score.toString());
+      setJoker(effectivePick.joker);
     }
-  }, [pick]);
-
-  // `locked` already declared above
+  }, [effectivePick]);
 
   async function save() {
     if (!userId || home === "" || away === "") return;
@@ -181,14 +208,15 @@ export function MatchCard({ match }: { match: Match }) {
       qc.invalidateQueries({ queryKey: ["pick", match.id, userId] });
       qc.invalidateQueries({ queryKey: ["my-picks", userId] });
       qc.invalidateQueries({ queryKey: ["submitters", match.id, locked] });
+      onPickSaved?.();
     }
   }
 
   // result colour for own pick when finished
   let resultBadge: { color: string; label: string } | null = null;
-  if (match.finished && pick && pick.home_score !== null) {
-    const exact = pick.home_score === match.home_score && pick.away_score === match.away_score;
-    const outcome = Math.sign(pick.home_score - pick.away_score) === Math.sign((match.home_score ?? 0) - (match.away_score ?? 0));
+  if (match.finished && effectivePick && effectivePick.home_score !== null) {
+    const exact = effectivePick.home_score === match.home_score && effectivePick.away_score === match.away_score;
+    const outcome = Math.sign(effectivePick.home_score - effectivePick.away_score) === Math.sign((match.home_score ?? 0) - (match.away_score ?? 0));
     if (exact) resultBadge = { color: "bg-success text-success-foreground", label: "Exakt" };
     else if (outcome) resultBadge = { color: "bg-warning text-warning-foreground", label: "Rätt vinnare" };
     else resultBadge = { color: "bg-destructive text-destructive-foreground", label: "Fel" };
@@ -221,12 +249,12 @@ export function MatchCard({ match }: { match: Match }) {
 
       {locked ? (
         <div className="pt-1">
-          {pick ? (
+          {effectivePick ? (
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Ditt tips:</span>
               <span className="font-semibold flex items-center gap-2">
-                {pick.home_score}–{pick.away_score}
-                {pick.joker && <Star className="size-4 text-primary fill-primary" />}
+                {effectivePick.home_score}–{effectivePick.away_score}
+                {effectivePick.joker && <Star className="size-4 text-primary fill-primary" />}
                 {resultBadge && (
                   <span className={cn("text-[10px] px-2 py-0.5 rounded-full", resultBadge.color)}>
                     {resultBadge.label}
