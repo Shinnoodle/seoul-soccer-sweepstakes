@@ -68,14 +68,15 @@ const { selectedPool } = usePool();
     },
   });
 
-  const approvedSet = new Set((allProfiles ?? []).filter((p) => p.approved).map((p) => p.id));
+  const isFreePool = (selectedPool?.entry_fee ?? -1) === 0;
+  const approvedSet = new Set((allProfiles ?? []).filter((p) => p.approved || isFreePool).map((p) => p.id));
   const poolSet = new Set(poolMembers ?? []);
   const approvedRows = (rows ?? []).filter((r) =>
     r.user_id &&
     approvedSet.has(r.user_id) &&
     (poolMembers === undefined || poolSet.has(r.user_id))
   );
-  const unapproved = (allProfiles ?? [])
+  const unapproved = isFreePool ? [] : (allProfiles ?? [])
     .filter((p) => !p.approved && (poolMembers === undefined || poolSet.has(p.id)));
     
   // Delad placering (1224 style)
