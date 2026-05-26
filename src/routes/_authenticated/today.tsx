@@ -178,6 +178,37 @@ function TodayPage() {
     },
   });
 
+  const { data: tournamentSettings } = useQuery({
+    queryKey: ["tournament-settings"],
+    queryFn: async () => {
+      const { data } = await supabase.from("tournament_settings").select("start_at").single();
+      return data;
+    },
+  });
+
+  const { data: ownLongterm } = useQuery({
+    queryKey: ["own-longterm", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data } = await supabase.from("long_term_picks").select("user_id").eq("user_id", userId!).maybeSingle();
+      return data;
+    },
+  });
+
+  const { data: ownR16Count } = useQuery({
+    queryKey: ["own-r16-count", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { count } = await supabase.from("r16_picks").select("*", { count: "exact", head: true }).eq("user_id", userId!);
+      return count ?? 0;
+    },
+  });
+
+  const tournamentStarted = tournamentSettings ? new Date(tournamentSettings.start_at) <= new Date() : true;
+  const haslongterm = !!ownLongterm;
+  const hasR16 = (ownR16Count ?? 0) >= 32;
+  const showPrepBanner = !tournamentStarted && (!haslongterm || !hasR16);
+
   const matchIds = useMemo(() => matches?.map(m => m.id) ?? [], [matches]);
   const matchIdsKey = matchIds.join(",");
 
@@ -224,6 +255,22 @@ function TodayPage() {
         <h1 className="text-2xl font-bold">Idag</h1>
         <p className="text-sm text-muted-foreground">{fmtDate(today.toISOString())}</p>
       </div>
+
+      {showPrepBanner && (
+        <Link to="/profile" className="block rounded-2xl border border-primary/40 bg-primary/5 p-4 space-y-2 hover:bg-primary/10 transition-colors">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">⚽</span>
+            <span className="font-semibold text-sm">Förbered dina tips innan VM-start!</span>
+          </div>
+          <div className="space-y-1 text-xs text-muted-foreground">
+            {!haslongterm && <div className="flex items-center gap-1.5"><span className="text-destructive font-bold">✗</span> Turneringstips saknas — vem vinner VM?</div>}
+            {haslongterm && <div className="flex items-center gap-1.5"><span className="text-success font-bold">✓</span> Turneringstips klart</div>}
+            {!hasR16 && <div className="flex items-center gap-1.5"><span className="text-destructive font-bold">✗</span> Slutspelslag saknas — vilka går vidare från grupperna?</div>}
+            {hasR16 && <div className="flex items-center gap-1.5"><span className="text-success font-bold">✓</span> Slutspelslag klart</div>}
+          </div>
+          <p className="text-xs text-primary font-semibold">Gå till Profil →</p>
+        </Link>
+      )}
 
       {noMatchesToday && nextMatch && <NextMatchCountdown match={nextMatch} poolMemberIds={poolMemberIds} />}
 
