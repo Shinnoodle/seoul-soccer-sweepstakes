@@ -204,7 +204,7 @@ const { selectedPool } = usePool();
         </TabsContent>
 
         <TabsContent value="stats">
-          <StatsSection />
+          <StatsSection poolMemberIds={poolMembers} />
         </TabsContent>
       </Tabs>
 
@@ -669,7 +669,7 @@ type StatRow = {
   jokerWins: number;
 };
 
-function StatsSection() {
+function StatsSection({ poolMemberIds }: { poolMemberIds?: string[] }) {
   const { data: matches } = useQuery({
     queryKey: ["stats-matches"],
     queryFn: async () => {
@@ -713,8 +713,10 @@ function StatsSection() {
   const matchById = new Map(matches.map((m) => [m.id, m]));
   const nameById = new Map(profiles.map((p) => [p.id, p.display_name]));
 
+  const visiblePicks = poolMemberIds ? picks.filter(p => poolMemberIds.includes(p.user_id)) : picks;
+
   const picksPerMatch = new Map<string, typeof picks>();
-  for (const p of picks) {
+  for (const p of visiblePicks) {
     if (!matchById.has(p.match_id)) continue;
     const arr = picksPerMatch.get(p.match_id) ?? [];
     arr.push(p);
@@ -735,7 +737,7 @@ function StatsSection() {
   const stats = new Map<string, StatRow>();
   const dayPoints = new Map<string, Map<string, number>>();
 
-  for (const p of picks) {
+  for (const p of visiblePicks) {
     const m = matchById.get(p.match_id);
     if (!m || m.home_score === null || m.away_score === null) continue;
 
