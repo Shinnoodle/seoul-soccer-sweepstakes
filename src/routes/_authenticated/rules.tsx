@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "@tanstack/react-router";
+import { usePool } from "@/hooks/usePool";
 
 
 
@@ -9,7 +10,6 @@ export const Route = createFileRoute("/_authenticated/rules")({
   component: RulesPage,
 });
 
-const ENTRY_FEE = 200;
 const SWISH_NUMBER = "0767-687974";
 
 // ---- help components ----
@@ -60,19 +60,26 @@ function PrizeRow({ emoji, label, amount, note }: { emoji: string; label: string
 // ---- main comp ----
 
 function RulesPage() {
-  const { data: profiles } = useQuery({
-    queryKey: ["profiles-count"],
+  const { selectedPool } = usePool();
+
+  const { data: poolMembers } = useQuery({
+    queryKey: ["pool-members", selectedPool?.id],
+    enabled: !!selectedPool,
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("id");
+      const { data, error } = await supabase
+        .from("pool_members")
+        .select("user_id")
+        .eq("pool_id", selectedPool!.id);
       if (error) throw error;
       return data;
     },
   });
 
-  const participants = profiles?.length ?? 0;
-  const pot = participants * ENTRY_FEE;
-const prize1 = Math.round((pot - 300 - 200) * 0.6);
-const prize2 = Math.round((pot - 300 - 200) * 0.3);
+  const entryFee = selectedPool?.entry_fee ?? 200;
+  const participants = poolMembers?.length ?? 0;
+  const pot = poolMembers != null ? participants * entryFee : null;
+  const prize1 = pot != null ? Math.round((pot - 300 - 200) * 0.6) : null;
+  const prize2 = pot != null ? Math.round((pot - 300 - 200) * 0.3) : null;
   const fmt = (n: number) => n.toLocaleString("sv-SE");
 
   return (
@@ -81,19 +88,19 @@ const prize2 = Math.round((pot - 300 - 200) * 0.3);
 
       <Card title="💰 Anmälningsavgift & Prispott">
         <p className="text-sm text-muted-foreground">
-          För att delta swisha Jenny Kim <strong>200 kr</strong> 
+          För att delta swisha Jenny Kim <strong>{entryFee} kr</strong>
           <strong className="text-foreground"> {SWISH_NUMBER}</strong> och skriv ditt namn i meddelandet.
         </p>
 
         <div className="rounded-xl bg-muted p-3 text-center space-y-1">
           <p className="text-xs text-muted-foreground uppercase tracking-wide">Total prispott</p>
-          <p className="text-3xl font-bold text-primary">{fmt(pot)} kr</p>
-          <p className="text-xs text-muted-foreground">{participants} deltagare × 200 kr</p>
+          <p className="text-3xl font-bold text-primary">{pot != null ? `${fmt(pot)} kr` : "–"}</p>
+          <p className="text-xs text-muted-foreground">{participants} deltagare × {entryFee} kr</p>
         </div>
 
         <div>
-          <PrizeRow emoji="🥇" label="Totalsegrare" amount={`${fmt(prize1)} kr`} note="60% av potten" />
-          <PrizeRow emoji="🥈" label="Tvåa" amount={`${fmt(prize2)} kr`} note="30% av potten" />
+          <PrizeRow emoji="🥇" label="Totalsegrare" amount={prize1 != null ? `${fmt(prize1)} kr` : "–"} note="60% av potten" />
+          <PrizeRow emoji="🥈" label="Tvåa" amount={prize2 != null ? `${fmt(prize2)} kr` : "–"} note="30% av potten" />
           <PrizeRow emoji="🎯" label="Matchtips-kungen" amount="300 kr" note="Fast pris" />
           <PrizeRow emoji="💥" label="VM skrällen" amount="300 kr" note="Fast pris" />
           <PrizeRow emoji="🔮" label="VM-Oraklet" amount="TBD" note="Fast pris" />
@@ -218,6 +225,10 @@ const prize2 = Math.round((pot - 300 - 200) * 0.3);
           <div className="flex items-center gap-2"><span className="inline-block size-4 rounded bg-destructive" /> Fel</div>
         </div>
       </Card>
+
+      <p className="text-xs text-muted-foreground text-center pb-2">
+        Byggd av Jenny Kim för privat bruk — en hobbyprojekt utan garantier. Buggar förekommer (rapportera dem gärna!).
+      </p>
     </div>
   );
 }
