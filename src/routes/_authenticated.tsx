@@ -1,12 +1,60 @@
 import { createFileRoute, Outlet, Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, ListChecks, Trophy, User, Shield, LogOut, BookOpen, MessageCircle, Menu, X, Star, Gift, ClipboardList, BarChart3, GitBranch } from "lucide-react";
+import { Calendar, ListChecks, Trophy, User, Shield, LogOut, BookOpen, MessageCircle, Menu, X, Star, Gift, ClipboardList, BarChart3, GitBranch, ChevronDown, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { usePool } from "@/hooks/usePool";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthLayout,
 });
+
+function PoolSelector() {
+  const { pools, selectedPool, selectPool } = usePool();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    if (open) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  if (!pools || pools.length <= 1) return null;
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold hover:bg-accent transition-colors"
+      >
+        <Users className="size-3.5 text-primary" />
+        <span className="max-w-[80px] truncate">{selectedPool?.name ?? "Välj pool"}</span>
+        <ChevronDown className={`size-3.5 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-full mt-2 w-48 rounded-xl border border-border bg-card shadow-lg overflow-hidden z-50">
+          {pools.map(pool => (
+            <button
+              key={pool.id}
+              onClick={() => { selectPool(pool.id); setOpen(false); }}
+              className={cn(
+                "w-full flex items-center gap-2 px-4 py-3 text-sm text-left hover:bg-accent transition-colors border-b border-border last:border-0",
+                selectedPool?.id === pool.id ? "text-primary font-semibold" : "text-foreground"
+              )}
+            >
+              <Users className="size-4 shrink-0" />
+              {pool.name}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function AuthLayout() {
   const navigate = useNavigate();
@@ -98,6 +146,8 @@ function AuthLayout() {
         </div>
 
         <div className="flex items-center gap-2 ml-auto">
+          <PoolSelector />
+
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen(o => !o)}
@@ -109,48 +159,27 @@ function AuthLayout() {
 
             {menuOpen && (
               <div className="absolute right-0 top-full mt-2 w-52 rounded-xl border border-border bg-card shadow-lg overflow-hidden z-50">
-                <Link
-                  to="/rules"
-                  className="flex items-center gap-3 px-4 py-3 text-sm font-semibold hover:bg-accent transition-colors border-b border-border"
-                >
+                <Link to="/rules" className="flex items-center gap-3 px-4 py-3 text-sm font-semibold hover:bg-accent transition-colors border-b border-border">
                   <BookOpen className="size-5 text-primary" />
                   Regler
                 </Link>
-                <Link
-                  to="/profile"
-                  className="flex items-center gap-3 px-4 py-3 text-sm font-semibold hover:bg-accent transition-colors border-b border-border"
-                >
+                <Link to="/profile" className="flex items-center gap-3 px-4 py-3 text-sm font-semibold hover:bg-accent transition-colors border-b border-border">
                   <Star className="size-5 text-primary" />
                   Turneringstips
                 </Link>
-                <Link
-                  to="/leaderboard"
-                  search={{ tab: "prizes" }}
-                  className="flex items-center gap-3 px-4 py-3 text-sm font-semibold hover:bg-accent transition-colors border-b border-border"
-                >
+                <Link to="/leaderboard" search={{ tab: "prizes" }} className="flex items-center gap-3 px-4 py-3 text-sm font-semibold hover:bg-accent transition-colors border-b border-border">
                   <Gift className="size-5 text-primary" />
                   Priser
                 </Link>
-                <Link
-                  to="/leaderboard"
-                  search={{ tab: "tips" }}
-                  className="flex items-center gap-3 px-4 py-3 text-sm font-semibold hover:bg-accent transition-colors border-b border-border"
-                >
+                <Link to="/leaderboard" search={{ tab: "tips" }} className="flex items-center gap-3 px-4 py-3 text-sm font-semibold hover:bg-accent transition-colors border-b border-border">
                   <ClipboardList className="size-5 text-primary" />
                   Tipslistan
                 </Link>
-                <Link
-                  to="/leaderboard"
-                  search={{ tab: "stats" }}
-                  className="flex items-center gap-3 px-4 py-3 text-sm font-semibold hover:bg-accent transition-colors border-b border-border"
-                >
+                <Link to="/leaderboard" search={{ tab: "stats" }} className="flex items-center gap-3 px-4 py-3 text-sm font-semibold hover:bg-accent transition-colors border-b border-border">
                   <BarChart3 className="size-5 text-primary" />
                   Statistik
                 </Link>
-                <Link
-                  to="/bracket"
-                  className="flex items-center gap-3 px-4 py-3 text-sm font-semibold hover:bg-accent transition-colors"
-                >
+                <Link to="/bracket" className="flex items-center gap-3 px-4 py-3 text-sm font-semibold hover:bg-accent transition-colors">
                   <GitBranch className="size-5 text-primary" />
                   Slutspelsträd
                 </Link>
