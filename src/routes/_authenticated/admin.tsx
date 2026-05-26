@@ -42,6 +42,7 @@ function AdminPage() {
       <h1 className="text-2xl font-bold">Admin</h1>
       <p className="text-sm text-muted-foreground">Godkänn spelare, sätt lagnamn och facit. Spelarnas tips låses automatiskt vid avspark.</p>
       <ApprovalsBlock />
+      <PoolsBlock />
       <SettingsBlock onSaved={() => qc.invalidateQueries({ queryKey: ["settings"] })} />
       <GroupActualsBlock />
       <div className="space-y-3">
@@ -118,6 +119,154 @@ function ApprovalsBlock() {
           ))}
         </ul>
       </details>
+    </section>
+  );
+}
+
+function PoolsBlock() {
+  const qc = useQueryClient();
+  const [newName, setNewName] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const { data: pools } = useQuery({
+    queryKey: ["admin-pools"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("pools")
+        .select("id, name, invite_code")
+        .order("created_at");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: profiles } = useQuery({
+    queryKey: ["profiles-all"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("profiles").select("id, display_name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: members } = useQuery({
+    queryKey: ["admin-pool-members"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("pool_members").select("pool_id, user_id");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  async function createPool() {
+    if (!newName.trim()) return;
+    setSaving(true); setMsg(null);
+    const { error } = await supabase.from("pools").insert({ name: newName.trim() });
+    setSaving(false);
+    if (error) setMsg(error.message);
+    else {
+      setNewName("");
+      setMsg("Pool skapad!");
+      qc.invalidateQueries({ queryKey: ["admin-pools"] });
+    }
+  }
+
+  async function removeMember(poolId: string, userId: string) {
+    await supabase.from("pool_members").delete().eq("pool_id", poolId).eq("user_id", userId);
+    qc.invalidateQueries({ queryKey: ["admin-pool-members"] });
+  }
+
+  async function addMember(poolId: string, userId: string) {
+    await supabase.from("pool_members").upsert({ pool_id: poolId, user_id: userId });
+    qc.invalidateQueries({ queryKey: ["admin-pool-members"] });
+  }
+
+  const nameOf = (uid: string) => profiles?.find(p => p.id === uid)?.display_name ?? "Okänd";
+  const baseUrl = window.location.origin;
+
+  return (
+    <section className="rounded-2xl bg-card border border-border p-4 space-y-4">
+      <h2 className="font-semibold">Pooler</h2>
+
+      <div className="flex gap-2">
+        <input
+          value={newName}
+          onChange={(e) => setNewName(e.target.value)}
+          placeholder="Namn på ny pool..."
+          className="flex-1 rounded-xl bg-input border border-border px-3 py-2 text-sm"
+        />
+        <button
+          onClick={createPool}
+          disabled={saving || !newName.trim()}
+          className="rounded-xl bg-primary text-primary-foreground text-sm font-semibold px-4 py-2 disabled:opacity-50"
+        >
+          Skapa
+        </button>
+      </div>
+      {msg && <p className="text-xs text-muted-foreground">{msg}</p>}
+
+      <div className="space-y-4">
+        {pools?.map(pool => {
+          const poolMembers = members?.filter(m => m.pool_id === pool.id) ?? [];
+          const nonMembers = profiles?.filter(p => !poolMembers.some(m => m.user_id === p.id)) ?? [];
+          const inviteUrl = `${baseUrl}/join/${pool.invite_code}`;
+
+          return (
+            <div key={pool.id} className="rounded-xl border border-border p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="font-semibold text-sm">{pool.name}</p>
+                <span className="text-xs text-muted-foreground">{poolMembers.length} medlemmar</span>
+              </div>
+
+              <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2">
+                <p className="text-xs text-muted-foreground flex-1 truncate">{inviteUrl}</p>
+                <button
+                  onClick={() => navigator.clipboard.writeText(inviteUrl)}
+                  className="text-xs text-primary font-semibold shrink-0"
+                >
+                  Kopiera
+                </button>
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Medlemmar</p>
+                {poolMembers.map(m => (
+                  <div key={m.user_id} className="flex items-center justify-between text-sm py-1">
+                    <span>{nameOf(m.user_id)}</span>
+                    <button
+                      onClick={() => removeMember(pool.id, m.user_id)}
+                      className="text-xs text-destructive hover:underline"
+                    >
+                      Ta bort
+                    </button>
+                  </div>
+                ))}
+                {poolMembers.length === 0 && (
+                  <p className="text-xs text-muted-foreground italic">Inga medlemmar ännu.</p>
+                )}
+              </div>
+
+              {nonMembers.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Lägg till</p>
+                  {nonMembers.map(p => (
+                    <div key={p.id} className="flex items-center justify-between text-sm py-1">
+                      <span>{p.display_name}</span>
+                      <button
+                        onClick={() => addMember(pool.id, p.id)}
+                        className="text-xs text-primary font-semibold hover:underline"
+                      >
+                        Lägg till
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </section>
   );
 }
