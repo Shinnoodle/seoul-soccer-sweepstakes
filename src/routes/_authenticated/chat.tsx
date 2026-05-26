@@ -2,14 +2,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Send, Trash2 } from "lucide-react";
+import { usePool } from "@/hooks/usePool";
 
 export const Route = createFileRoute("/_authenticated/chat")({
   component: ChatPage,
 });
 
-type Msg = { id: string; user_id: string; content: string; created_at: string };
+type Msg = { id: string; user_id: string; content: string; created_at: string; pool_id: string };
 
 function ChatPage() {
+  const { selectedPool } = usePool();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [names, setNames] = useState<Record<string, string>>({});
   const [text, setText] = useState("");
@@ -19,6 +21,8 @@ function ChatPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!selectedPool) return;
+
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
       const uid = session?.user.id ?? null;
@@ -31,6 +35,7 @@ function ChatPage() {
       const { data } = await supabase
         .from("chat_messages")
         .select("*")
+        .eq("pool_id", selectedPool.id)
         .order("created_at", { ascending: true })
         .limit(500);
       setMessages((data as Msg[]) ?? []);
@@ -38,8 +43,13 @@ function ChatPage() {
     })();
 
     const ch = supabase
-      .channel("chat_messages_rt")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" }, async (payload) => {
+      .channel(`chat_messages_rt_${selectedPool.id}`)
+      .on("postgres_changes", {
+        event: "INSERT",
+        schema: "public",
+        table: "chat_messages",
+        filter: `pool_id=eq.${selectedPool.id}`,
+      }, async (payload) => {
         const m = payload.new as Msg;
         setMessages(prev => prev.some(p => p.id === m.id) ? prev : [...prev, m]);
         await loadNames([m]);
@@ -51,7 +61,7 @@ function ChatPage() {
       .subscribe();
 
     return () => { supabase.removeChannel(ch); };
-  }, []);
+  }, [selectedPool?.id]);
 
   async function loadNames(msgs: Msg[]) {
     const missing = Array.from(new Set(msgs.map(m => m.user_id))).filter(id => !names[id]);
@@ -73,9 +83,13 @@ function ChatPage() {
   async function send(e: React.FormEvent) {
     e.preventDefault();
     const content = text.trim();
-    if (!content || !userId || sending) return;
+    if (!content || !userId || sending || !selectedPool) return;
     setSending(true);
-    const { error } = await supabase.from("chat_messages").insert({ user_id: userId, content });
+    const { error } = await supabase.from("chat_messages").insert({
+      user_id: userId,
+      content,
+      pool_id: selectedPool.id,
+    });
     setSending(false);
     if (!error) setText("");
   }
@@ -98,10 +112,22 @@ function ChatPage() {
     return d.toLocaleDateString("sv-SE", { weekday: "long", day: "numeric", month: "short" });
   }
 
+  if (!selectedPool) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-7.5rem)]">
+        <p className="text-muted-foreground">Laddar pool...</p>
+      </div>
+    );
+  }
+
   let lastDay = "";
 
   return (
     <div className="flex flex-col h-[calc(100vh-7.5rem)]">
+      <div className="px-4 py-2 border-b border-border">
+        <p className="text-xs text-muted-foreground">Chat · {selectedPool.name}</p>
+      </div>
+
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
         {messages.length === 0 && (
           <div className="text-center text-sm text-muted-foreground py-12">
