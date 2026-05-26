@@ -318,6 +318,7 @@ function PrizeLeaderSection({ approvedRows, poolMemberIds, entryFee }: { approve
   const secondPlace = secondScore !== null ? totalSorted.filter((r) => r.total_points === secondScore) : [];
 
   const matchLeaders = topTied(approvedRows, (r) => r.match_points ?? 0);
+  const oracleLeaders = topTied(approvedRows, (r) => r.longterm_points ?? 0);
 
   const upsetPool = (profiles ?? [])
     .map((p) => ({ id: p.id, display_name: p.display_name, upsets: upsets.get(p.id) ?? 0 }))
@@ -348,6 +349,10 @@ function PrizeLeaderSection({ approvedRows, poolMemberIds, entryFee }: { approve
     {
       key: "match", emoji: "🎯", label: "Matchtips-kungen",
       entries: matchLeaders.map((r) => ({ name: r.display_name ?? "–", detail: `${r.match_points}p` })),
+    },
+    {
+      key: "oracle", emoji: "🔮", label: "VM-Oraklet",
+      entries: oracleLeaders.map((r) => ({ name: r.display_name ?? "–", detail: `${r.longterm_points}p` })),
     },
     {
       key: "upset", emoji: "💥", label: "VM skrällen",
