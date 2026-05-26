@@ -8,6 +8,20 @@ export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Logga in – Sweepstakes" }] }),
 });
 
+async function handlePendingInvite(userId: string) {
+  const code = localStorage.getItem("pendingInviteCode");
+  if (!code) return;
+  const { data: pool } = await supabase
+    .from("pools")
+    .select("id")
+    .eq("invite_code", code)
+    .single();
+  if (pool) {
+    await supabase.from("pool_members").upsert({ pool_id: pool.id, user_id: userId });
+  }
+  localStorage.removeItem("pendingInviteCode");
+}
+
 function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -30,7 +44,7 @@ function LoginPage() {
     try {
       if (mode === "signup") {
         if (displayName.trim().length < 2) throw new Error("Skriv ditt namn");
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email, password,
           options: {
             data: { display_name: displayName.trim() },
@@ -38,9 +52,11 @@ function LoginPage() {
           },
         });
         if (error) throw error;
+        if (data.user) await handlePendingInvite(data.user.id);
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        if (data.user) await handlePendingInvite(data.user.id);
       }
       navigate({ to: "/today" });
     } catch (err) {
@@ -97,8 +113,6 @@ function LoginPage() {
             {loading ? "Laddar..." : (mode === "signup" ? "Skapa konto" : "Logga in")}
           </button>
         </form>
-
-
 
         <button
           onClick={() => { setMode(mode === "signup" ? "login" : "signup"); setError(null); }}
