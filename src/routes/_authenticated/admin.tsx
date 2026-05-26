@@ -138,6 +138,7 @@ function PoolRow({
 }) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(pool.name);
+  const [copied, setCopied] = useState(false);
 
   const poolMembers = members?.filter(m => m.pool_id === pool.id) ?? [];
   const nonMembers = profiles?.filter(p => !poolMembers.some(m => m.user_id === p.id)) ?? [];
@@ -194,10 +195,11 @@ function PoolRow({
         <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2">
           <p className="text-xs text-muted-foreground flex-1 truncate">{inviteUrl}</p>
           <button
-            onClick={() => navigator.clipboard.writeText(inviteUrl)}
-            className="text-xs text-primary font-semibold shrink-0"
+            onClick={() => { navigator.clipboard.writeText(inviteUrl); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+            className="text-xs font-semibold shrink-0 transition-colors"
+            style={{ color: copied ? "var(--success)" : undefined }}
           >
-            Kopiera
+            {copied ? "Kopierat!" : "Kopiera"}
           </button>
         </div>
       )}
