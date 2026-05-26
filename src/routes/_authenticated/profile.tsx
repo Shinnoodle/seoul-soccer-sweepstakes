@@ -259,8 +259,11 @@ function pickTeam(letter: string, team: string, pos: 1 | 2 | 3) {
         </p>
 
         {longterm && (
-          <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-2">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Ditt tips</p>
+          <div className="rounded-xl border border-success/40 bg-success/5 p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-success">Sparat tips</p>
+              <span className="ml-auto text-xs text-success">✓</span>
+            </div>
             {([
               ["🏆", "VM-vinnare", longterm.champion, true],
               ["🥈", "Finalist", longterm.runner_up, true],
@@ -281,6 +284,9 @@ function pickTeam(letter: string, team: string, pos: 1 | 2 | 3) {
 
         {!started && (
           <>
+            {longterm && (
+              <p className="text-xs text-muted-foreground pt-1 border-t border-border">Ändra ditt tips nedan</p>
+            )}
             <div className="rounded-lg bg-muted/50 p-2.5 text-xs text-muted-foreground">
               Du sätter <strong className="text-foreground">4 lag i semifinal</strong>: VM-vinnaren, finalisten
               (förloraren i finalen) och de <strong className="text-foreground">2 lag som åker ut i semifinal</strong>.
