@@ -196,7 +196,7 @@ const { selectedPool } = usePool();
         </TabsContent>
 
         <TabsContent value="prizes">
-          <PrizeLeaderSection approvedRows={approvedRows} poolMemberIds={poolMembers} />
+          <PrizeLeaderSection approvedRows={approvedRows} poolMemberIds={poolMembers} entryFee={selectedPool?.entry_fee} />
         </TabsContent>
 
         <TabsContent value="tips">
@@ -215,7 +215,7 @@ const { selectedPool } = usePool();
   );
 }
 
-function PrizeLeaderSection({ approvedRows, poolMemberIds }: { approvedRows: any[]; poolMemberIds?: string[] }) {
+function PrizeLeaderSection({ approvedRows, poolMemberIds, entryFee }: { approvedRows: any[]; poolMemberIds?: string[]; entryFee?: number }) {
   const { data: matches } = useQuery({
     queryKey: ["stats-matches"],
     queryFn: async () => {
@@ -330,7 +330,13 @@ function PrizeLeaderSection({ approvedRows, poolMemberIds }: { approvedRows: any
   type Entry = { name: string; detail: string };
   type Prize = { key: string; emoji: string; label: string; entries: Entry[]; suffix?: string };
 
+  const pot = entryFee != null ? approvedRows.length * entryFee : null;
+
   const prizes: Prize[] = [
+    ...(pot != null ? [{
+      key: "pot", emoji: "💰", label: "Pott",
+      entries: [{ name: `${approvedRows.length} spelare × ${entryFee} kr`, detail: `${pot} kr` }],
+    }] : []),
     {
       key: "first", emoji: "🥇", label: "Totalsegrare",
       entries: firstPlace.map((r) => ({ name: r.display_name ?? "–", detail: `${r.total_points}p` })),

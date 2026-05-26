@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 export type Pool = {
   id: string;
   name: string;
+  entry_fee: number;
 };
 
 export function usePool() {
@@ -17,7 +18,7 @@ export function usePool() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("pool_members")
-        .select("pool_id, pools(id, name)")
+        .select("pool_id, pools(id, name, entry_fee)")
         .eq("user_id", user!.id);
       if (error) throw error;
       return data.map((r) => r.pools as Pool);

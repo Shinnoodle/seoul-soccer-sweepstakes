@@ -267,18 +267,21 @@ export type Database = {
           id: string
           name: string
           invite_code: string | null
+          entry_fee: number
           created_at: string
         }
         Insert: {
           id?: string
           name: string
           invite_code?: string | null
+          entry_fee?: number
           created_at?: string
         }
         Update: {
           id?: string
           name?: string
           invite_code?: string | null
+          entry_fee?: number
           created_at?: string
         }
         Relationships: []

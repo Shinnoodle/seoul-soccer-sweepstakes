@@ -125,19 +125,20 @@ function ApprovalsBlock() {
 
 function PoolRow({
   pool, members, profiles, baseUrl,
-  onRemoveMember, onAddMember, onRename, onDelete,
+  onRemoveMember, onAddMember, onUpdate, onDelete,
 }: {
-  pool: { id: string; name: string; invite_code: string | null };
+  pool: { id: string; name: string; invite_code: string | null; entry_fee: number };
   members: { pool_id: string; user_id: string }[] | undefined;
   profiles: { id: string; display_name: string }[] | undefined;
   baseUrl: string;
   onRemoveMember: (poolId: string, userId: string) => void;
   onAddMember: (poolId: string, userId: string) => void;
-  onRename: (poolId: string, name: string) => void;
+  onUpdate: (poolId: string, name: string, entryFee: number) => void;
   onDelete: (poolId: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(pool.name);
+  const [editFee, setEditFee] = useState(pool.entry_fee.toString());
   const [copied, setCopied] = useState(false);
 
   const poolMembers = members?.filter(m => m.pool_id === pool.id) ?? [];
@@ -154,18 +155,26 @@ function PoolRow({
             <input
               value={editName}
               onChange={e => setEditName(e.target.value)}
+              placeholder="Namn"
               className="flex-1 rounded-lg bg-input border border-border px-2 py-1 text-sm"
               autoFocus
             />
+            <input
+              value={editFee}
+              onChange={e => setEditFee(e.target.value.replace(/\D/g, ""))}
+              inputMode="numeric"
+              placeholder="kr"
+              className="w-16 rounded-lg bg-input border border-border px-2 py-1 text-sm text-center"
+            />
             <button
-              onClick={() => { onRename(pool.id, editName); setEditing(false); }}
+              onClick={() => { onUpdate(pool.id, editName, parseInt(editFee) || 0); setEditing(false); }}
               disabled={!editName.trim()}
               className="text-xs text-primary font-semibold disabled:opacity-40"
             >
               Spara
             </button>
             <button
-              onClick={() => { setEditing(false); setEditName(pool.name); }}
+              onClick={() => { setEditing(false); setEditName(pool.name); setEditFee(pool.entry_fee.toString()); }}
               className="text-xs text-muted-foreground"
             >
               Avbryt
@@ -174,6 +183,7 @@ function PoolRow({
         ) : (
           <>
             <p className="font-semibold text-sm flex-1">{pool.name}</p>
+            <span className="text-xs text-muted-foreground">{pool.entry_fee} kr</span>
             <button
               onClick={() => setEditing(true)}
               className="text-xs text-muted-foreground hover:text-foreground"
@@ -263,7 +273,7 @@ function PoolsBlock() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("pools")
-        .select("id, name, invite_code")
+        .select("id, name, invite_code, entry_fee")
         .order("created_at");
       if (error) throw error;
       return data;
@@ -301,8 +311,8 @@ function PoolsBlock() {
     }
   }
 
-  async function renamePool(poolId: string, name: string) {
-    const { error } = await supabase.from("pools").update({ name }).eq("id", poolId);
+  async function updatePool(poolId: string, name: string, entryFee: number) {
+    const { error } = await supabase.from("pools").update({ name, entry_fee: entryFee }).eq("id", poolId);
     if (error) alert(error.message);
     else qc.invalidateQueries({ queryKey: ["admin-pools"] });
   }
@@ -363,7 +373,7 @@ function PoolsBlock() {
             baseUrl={baseUrl}
             onRemoveMember={removeMember}
             onAddMember={addMember}
-            onRename={renamePool}
+            onUpdate={updatePool}
             onDelete={deletePool}
           />
         ))}
