@@ -123,7 +123,7 @@ function ChatPage() {
   let lastDay = "";
 
   return (
-    <div className="flex flex-col h-[calc(100vh-7.5rem)]">
+    <div className="flex flex-col" style={{ height: "calc(100dvh - 7.5rem)" }}>
       <div className="px-4 py-2 border-b border-border">
         <p className="text-xs text-muted-foreground">Chat · {selectedPool.name}</p>
       </div>
