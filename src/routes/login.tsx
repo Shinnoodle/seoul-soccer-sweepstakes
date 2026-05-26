@@ -10,16 +10,26 @@ export const Route = createFileRoute("/login")({
 
 async function handlePendingInvite(userId: string) {
   const code = localStorage.getItem("pendingInviteCode");
-  if (!code) return;
-  const { data: pool } = await supabase
-    .from("pools")
-    .select("id")
-    .eq("invite_code", code)
-    .single();
-  if (pool) {
-    await supabase.from("pool_members").upsert({ pool_id: pool.id, user_id: userId });
-  }
   localStorage.removeItem("pendingInviteCode");
+
+  let poolId: string | null = null;
+
+  if (code) {
+    const { data: pool } = await supabase
+      .from("pools").select("id").eq("invite_code", code).single();
+    if (pool) poolId = pool.id;
+  }
+
+  if (!poolId) {
+    // Fall back to the default pool (oldest created)
+    const { data: pool } = await supabase
+      .from("pools").select("id").order("created_at", { ascending: true }).limit(1).single();
+    if (pool) poolId = pool.id;
+  }
+
+  if (poolId) {
+    await supabase.from("pool_members").upsert({ pool_id: poolId, user_id: userId });
+  }
 }
 
 function LoginPage() {
