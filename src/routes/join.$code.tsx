@@ -36,6 +36,19 @@ function JoinPage() {
 
       setPoolName(pool.name);
 
+      // Kolla om redan medlem
+      const { data: existing } = await supabase
+        .from("pool_members")
+        .select("user_id")
+        .eq("pool_id", pool.id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (existing) {
+        navigate({ to: "/today" });
+        return;
+      }
+
       // Lägg till användaren i poolen
       const { error: joinError } = await supabase
         .from("pool_members")
