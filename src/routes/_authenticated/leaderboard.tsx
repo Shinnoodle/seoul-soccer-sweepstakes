@@ -196,7 +196,7 @@ const { selectedPool } = usePool();
         </TabsContent>
 
         <TabsContent value="prizes">
-          <PrizeLeaderSection approvedRows={approvedRows} />
+          <PrizeLeaderSection approvedRows={approvedRows} poolMemberIds={poolMembers} />
         </TabsContent>
 
         <TabsContent value="tips">
@@ -215,7 +215,7 @@ const { selectedPool } = usePool();
   );
 }
 
-function PrizeLeaderSection({ approvedRows }: { approvedRows: any[] }) {
+function PrizeLeaderSection({ approvedRows, poolMemberIds }: { approvedRows: any[]; poolMemberIds?: string[] }) {
   const { data: matches } = useQuery({
     queryKey: ["stats-matches"],
     queryFn: async () => {
@@ -254,8 +254,10 @@ function PrizeLeaderSection({ approvedRows }: { approvedRows: any[] }) {
   const matchById = new Map(matches.map((m) => [m.id, m]));
   const sign = (n: number) => (n > 0 ? 1 : n < 0 ? -1 : 0);
 
+  const visiblePicks = poolMemberIds ? picks.filter(p => poolMemberIds.includes(p.user_id)) : picks;
+
   const picksPerMatch = new Map<string, typeof picks>();
-  for (const p of picks) {
+  for (const p of visiblePicks) {
     if (!matchById.has(p.match_id)) continue;
     const arr = picksPerMatch.get(p.match_id) ?? [];
     arr.push(p);
@@ -266,7 +268,7 @@ function PrizeLeaderSection({ approvedRows }: { approvedRows: any[] }) {
   const matchPts = new Map<string, number>();
   const upsets = new Map<string, number>();
 
-  for (const p of picks) {
+  for (const p of visiblePicks) {
     const m = matchById.get(p.match_id);
     if (!m || m.home_score === null || m.away_score === null) continue;
     const exact = p.home_score === m.home_score && p.away_score === m.away_score;
