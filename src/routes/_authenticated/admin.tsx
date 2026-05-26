@@ -123,6 +123,133 @@ function ApprovalsBlock() {
   );
 }
 
+function PoolRow({
+  pool, members, profiles, baseUrl,
+  onRemoveMember, onAddMember, onRename, onDelete,
+}: {
+  pool: { id: string; name: string; invite_code: string | null };
+  members: { pool_id: string; user_id: string }[] | undefined;
+  profiles: { id: string; display_name: string }[] | undefined;
+  baseUrl: string;
+  onRemoveMember: (poolId: string, userId: string) => void;
+  onAddMember: (poolId: string, userId: string) => void;
+  onRename: (poolId: string, name: string) => void;
+  onDelete: (poolId: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState(pool.name);
+
+  const poolMembers = members?.filter(m => m.pool_id === pool.id) ?? [];
+  const nonMembers = profiles?.filter(p => !poolMembers.some(m => m.user_id === p.id)) ?? [];
+  const nameOf = (uid: string) => profiles?.find(p => p.id === uid)?.display_name ?? "Okänd";
+  const inviteUrl = pool.invite_code ? `${baseUrl}/join/${pool.invite_code}` : null;
+
+  return (
+    <div className="rounded-xl border border-border p-3 space-y-3">
+      {/* Header */}
+      <div className="flex items-center gap-2">
+        {editing ? (
+          <>
+            <input
+              value={editName}
+              onChange={e => setEditName(e.target.value)}
+              className="flex-1 rounded-lg bg-input border border-border px-2 py-1 text-sm"
+              autoFocus
+            />
+            <button
+              onClick={() => { onRename(pool.id, editName); setEditing(false); }}
+              disabled={!editName.trim()}
+              className="text-xs text-primary font-semibold disabled:opacity-40"
+            >
+              Spara
+            </button>
+            <button
+              onClick={() => { setEditing(false); setEditName(pool.name); }}
+              className="text-xs text-muted-foreground"
+            >
+              Avbryt
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="font-semibold text-sm flex-1">{pool.name}</p>
+            <button
+              onClick={() => setEditing(true)}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              Byt namn
+            </button>
+            <button
+              onClick={() => onDelete(pool.id)}
+              className="text-xs text-destructive hover:underline"
+            >
+              Radera
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* Invite URL */}
+      {inviteUrl && (
+        <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2">
+          <p className="text-xs text-muted-foreground flex-1 truncate">{inviteUrl}</p>
+          <button
+            onClick={() => navigator.clipboard.writeText(inviteUrl)}
+            className="text-xs text-primary font-semibold shrink-0"
+          >
+            Kopiera
+          </button>
+        </div>
+      )}
+
+      {/* Collapsible members */}
+      <details>
+        <summary className="text-xs font-semibold uppercase tracking-wide text-muted-foreground cursor-pointer select-none">
+          Medlemmar ({poolMembers.length})
+        </summary>
+        <div className="mt-2 space-y-1">
+          {poolMembers.map(m => (
+            <div key={m.user_id} className="flex items-center justify-between text-sm py-1">
+              <span>{nameOf(m.user_id)}</span>
+              <button
+                onClick={() => onRemoveMember(pool.id, m.user_id)}
+                className="text-xs text-destructive hover:underline"
+              >
+                Ta bort
+              </button>
+            </div>
+          ))}
+          {poolMembers.length === 0 && (
+            <p className="text-xs text-muted-foreground italic">Inga medlemmar ännu.</p>
+          )}
+        </div>
+      </details>
+
+      {/* Collapsible add members */}
+      {nonMembers.length > 0 && (
+        <details>
+          <summary className="text-xs font-semibold uppercase tracking-wide text-muted-foreground cursor-pointer select-none">
+            Lägg till ({nonMembers.length})
+          </summary>
+          <div className="mt-2 space-y-1">
+            {nonMembers.map(p => (
+              <div key={p.id} className="flex items-center justify-between text-sm py-1">
+                <span>{p.display_name}</span>
+                <button
+                  onClick={() => onAddMember(pool.id, p.id)}
+                  className="text-xs text-primary font-semibold hover:underline"
+                >
+                  Lägg till
+                </button>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
+    </div>
+  );
+}
+
 function PoolsBlock() {
   const qc = useQueryClient();
   const [newName, setNewName] = useState("");
@@ -172,6 +299,23 @@ function PoolsBlock() {
     }
   }
 
+  async function renamePool(poolId: string, name: string) {
+    const { error } = await supabase.from("pools").update({ name }).eq("id", poolId);
+    if (error) alert(error.message);
+    else qc.invalidateQueries({ queryKey: ["admin-pools"] });
+  }
+
+  async function deletePool(poolId: string) {
+    if (!window.confirm("Radera poolen? Alla medlemskap i poolen tas bort.")) return;
+    await supabase.from("pool_members").delete().eq("pool_id", poolId);
+    const { error } = await supabase.from("pools").delete().eq("id", poolId);
+    if (error) alert(error.message);
+    else {
+      qc.invalidateQueries({ queryKey: ["admin-pools"] });
+      qc.invalidateQueries({ queryKey: ["admin-pool-members"] });
+    }
+  }
+
   async function removeMember(poolId: string, userId: string) {
     const { error } = await supabase.from("pool_members").delete().eq("pool_id", poolId).eq("user_id", userId);
     if (error) alert(error.message);
@@ -184,7 +328,6 @@ function PoolsBlock() {
     else qc.invalidateQueries({ queryKey: ["admin-pool-members"] });
   }
 
-  const nameOf = (uid: string) => profiles?.find(p => p.id === uid)?.display_name ?? "Okänd";
   const baseUrl = window.location.origin;
 
   return (
@@ -209,65 +352,19 @@ function PoolsBlock() {
       {msg && <p className="text-xs text-muted-foreground">{msg}</p>}
 
       <div className="space-y-4">
-        {pools?.map(pool => {
-          const poolMembers = members?.filter(m => m.pool_id === pool.id) ?? [];
-          const nonMembers = profiles?.filter(p => !poolMembers.some(m => m.user_id === p.id)) ?? [];
-          const inviteUrl = `${baseUrl}/join/${pool.invite_code}`;
-
-          return (
-            <div key={pool.id} className="rounded-xl border border-border p-3 space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="font-semibold text-sm">{pool.name}</p>
-                <span className="text-xs text-muted-foreground">{poolMembers.length} medlemmar</span>
-              </div>
-
-              <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2">
-                <p className="text-xs text-muted-foreground flex-1 truncate">{inviteUrl}</p>
-                <button
-                  onClick={() => navigator.clipboard.writeText(inviteUrl)}
-                  className="text-xs text-primary font-semibold shrink-0"
-                >
-                  Kopiera
-                </button>
-              </div>
-
-              <div className="space-y-1">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Medlemmar</p>
-                {poolMembers.map(m => (
-                  <div key={m.user_id} className="flex items-center justify-between text-sm py-1">
-                    <span>{nameOf(m.user_id)}</span>
-                    <button
-                      onClick={() => removeMember(pool.id, m.user_id)}
-                      className="text-xs text-destructive hover:underline"
-                    >
-                      Ta bort
-                    </button>
-                  </div>
-                ))}
-                {poolMembers.length === 0 && (
-                  <p className="text-xs text-muted-foreground italic">Inga medlemmar ännu.</p>
-                )}
-              </div>
-
-              {nonMembers.length > 0 && (
-                <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Lägg till</p>
-                  {nonMembers.map(p => (
-                    <div key={p.id} className="flex items-center justify-between text-sm py-1">
-                      <span>{p.display_name}</span>
-                      <button
-                        onClick={() => addMember(pool.id, p.id)}
-                        className="text-xs text-primary font-semibold hover:underline"
-                      >
-                        Lägg till
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })}
+        {pools?.map(pool => (
+          <PoolRow
+            key={pool.id}
+            pool={pool}
+            members={members}
+            profiles={profiles}
+            baseUrl={baseUrl}
+            onRemoveMember={removeMember}
+            onAddMember={addMember}
+            onRename={renamePool}
+            onDelete={deletePool}
+          />
+        ))}
       </div>
     </section>
   );
