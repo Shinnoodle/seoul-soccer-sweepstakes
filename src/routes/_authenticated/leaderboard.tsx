@@ -330,7 +330,7 @@ function PrizeLeaderSection({ approvedRows, poolMemberIds, entryFee }: { approve
   type Entry = { name: string; detail: string };
   type Prize = { key: string; emoji: string; label: string; entries: Entry[]; suffix?: string };
 
-  const pot = entryFee != null ? approvedRows.length * entryFee : null;
+  const pot = entryFee != null && poolMemberIds != null ? approvedRows.length * entryFee : null;
 
   const prizes: Prize[] = [
     ...(pot != null ? [{
