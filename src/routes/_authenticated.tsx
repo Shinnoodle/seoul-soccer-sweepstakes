@@ -106,20 +106,21 @@ function AuthLayout() {
 
   useEffect(() => {
     if (!ready) return;
-
-    async function checkUnread() {
-      if (isOnChatRef.current) return;
-      const lastSeen = localStorage.getItem("chat_last_seen");
-      const { count } = await supabase
+    const lastSeen = localStorage.getItem("chat_last_seen");
+    if (lastSeen && !isOnChatRef.current) {
+      supabase
         .from("chat_messages")
         .select("id", { count: "exact", head: true })
-        .gt("created_at", lastSeen ?? "1970-01-01");
-      if (count && count > 0) setUnreadChat(true);
+        .gt("created_at", lastSeen)
+        .then(({ count }) => { if (count && count > 0) setUnreadChat(true); });
     }
-
-    checkUnread();
-    const interval = setInterval(checkUnread, 30000);
-    return () => clearInterval(interval);
+    const ch = supabase
+      .channel("chat_unread")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" }, () => {
+        if (!isOnChatRef.current) setUnreadChat(true);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
   }, [ready]);
 
   if (!ready) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Laddar...</div>;
