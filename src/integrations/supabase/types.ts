@@ -262,6 +262,50 @@ export type Database = {
         }
         Relationships: []
       }
+      pools: {
+        Row: {
+          id: string
+          name: string
+          invite_code: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          invite_code?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          invite_code?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      pool_members: {
+        Row: {
+          pool_id: string
+          user_id: string
+        }
+        Insert: {
+          pool_id: string
+          user_id: string
+        }
+        Update: {
+          pool_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pool_members_pool_id_fkey"
+            columns: ["pool_id"]
+            isOneToOne: false
+            referencedRelation: "pools"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       leaderboard: {

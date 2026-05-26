@@ -7,6 +7,7 @@ import { fmtDate, stageLabel, cn, seDayKey, sameSeDay } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, X } from "lucide-react";
+import { usePool } from "@/hooks/usePool";
 
 export const Route = createFileRoute("/_authenticated/matches")({
   component: MatchesPage,
@@ -20,10 +21,22 @@ function MatchesPage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [userId, setUserId] = useState<string | null | undefined>(undefined);
+  const { selectedPool } = usePool();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setUserId(data.session?.user.id ?? null));
   }, []);
+
+  const { data: poolMemberIds } = useQuery({
+    queryKey: ["pool-members", selectedPool?.id],
+    enabled: !!selectedPool,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("pool_members").select("user_id").eq("pool_id", selectedPool!.id);
+      if (error) throw error;
+      return data.map(m => m.user_id);
+    },
+  });
 
   const { data: matches, isLoading } = useQuery({
     queryKey: ["matches", "all"],
@@ -170,6 +183,7 @@ function MatchesPage() {
                 ownPick={ownPick}
                 allMatchPicks={matchAllPicks}
                 jokerCount={jokerCount}
+                poolMemberIds={poolMemberIds}
                 onPickSaved={() => {
                   qc.invalidateQueries({ queryKey: ["own-picks-bulk", userId, matchIdsKey] });
                 }}

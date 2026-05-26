@@ -104,6 +104,7 @@ export function MatchCard({
   allMatchPicks: propAllPicks,
   onPickSaved,
   jokerCount,
+  poolMemberIds,
 }: {
   match: Match;
   /** Provide from parent to skip per-card getUser() calls */
@@ -116,6 +117,8 @@ export function MatchCard({
   onPickSaved?: () => void;
   /** Total saved jokers across all matches — used to enforce the 3-joker limit */
   jokerCount?: number;
+  /** When provided, tippstatus and picks are scoped to these user IDs */
+  poolMemberIds?: string[];
 }) {
   const qc = useQueryClient();
 
@@ -270,7 +273,10 @@ export function MatchCard({
           )}
 
           {allPicks && profiles && (() => {
-            const knownPicks = allPicks.filter(p => profiles.some(pr => pr.id === p.user_id));
+            const knownPicks = allPicks.filter(p =>
+              profiles.some(pr => pr.id === p.user_id) &&
+              (!poolMemberIds || poolMemberIds.includes(p.user_id))
+            );
             return knownPicks.length > 0 && <AllPicksPanel picks={knownPicks} match={match} nameOf={nameOf} />;
           })()}
         </div>
@@ -317,8 +323,11 @@ export function MatchCard({
           {savedAt > 0 && !err && <p className="text-xs text-muted-foreground">Sparat ✓</p>}
 
           {profiles && profiles.length > 0 && submitterIds && (() => {
-            const done = profiles.filter(p => submitterIds.includes(p.id));
-            const missing = profiles.filter(p => !submitterIds.includes(p.id));
+            const visibleProfiles = poolMemberIds
+              ? profiles.filter(p => poolMemberIds.includes(p.id))
+              : profiles;
+            const done = visibleProfiles.filter(p => submitterIds.includes(p.id));
+            const missing = visibleProfiles.filter(p => !submitterIds.includes(p.id));
             return (
               <div className="mt-2 pt-3 border-t border-border space-y-2">
                 <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">

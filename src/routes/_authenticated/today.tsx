@@ -6,6 +6,7 @@ import { MatchCard } from "@/components/MatchCard";
 import { fmtDate, fmtTime, seDayKey } from "@/lib/utils";
 import { TeamFlag } from "@/lib/teamFlags";
 import { Link } from "@tanstack/react-router";
+import { usePool } from "@/hooks/usePool";
 
 export const Route = createFileRoute("/_authenticated/today")({
   component: TodayPage,
@@ -50,7 +51,7 @@ function CountdownUnit({ value, label }: { value: number; label: string }) {
   );
 }
 
-function NextMatchCountdown({ match }: { match: Match }) {
+function NextMatchCountdown({ match, poolMemberIds }: { match: Match; poolMemberIds?: string[] }) {
   const countdown = useCountdown(new Date(match.kickoff));
 
   const { data: submitterIds } = useQuery({
@@ -72,8 +73,11 @@ function NextMatchCountdown({ match }: { match: Match }) {
   });
 
   if (!countdown) return null;
-  const done = profiles?.filter(p => submitterIds?.includes(p.id)) ?? [];
-  const missing = profiles?.filter(p => !submitterIds?.includes(p.id)) ?? [];
+  const visibleProfiles = poolMemberIds
+    ? (profiles ?? []).filter(p => poolMemberIds.includes(p.id))
+    : profiles;
+  const done = visibleProfiles?.filter(p => submitterIds?.includes(p.id)) ?? [];
+  const missing = visibleProfiles?.filter(p => !submitterIds?.includes(p.id)) ?? [];
 
   return (
   <>
@@ -132,10 +136,22 @@ function TodayPage() {
   const today = new Date();
   const todayKey = seDayKey(today.toISOString());
   const [userId, setUserId] = useState<string | null | undefined>(undefined);
+  const { selectedPool } = usePool();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setUserId(data.session?.user.id ?? null));
   }, []);
+
+  const { data: poolMemberIds } = useQuery({
+    queryKey: ["pool-members", selectedPool?.id],
+    enabled: !!selectedPool,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("pool_members").select("user_id").eq("pool_id", selectedPool!.id);
+      if (error) throw error;
+      return data.map(m => m.user_id);
+    },
+  });
 
   const { data: matches, isLoading } = useQuery({
     queryKey: ["matches", "today", todayKey],
@@ -209,7 +225,7 @@ function TodayPage() {
         <p className="text-sm text-muted-foreground">{fmtDate(today.toISOString())}</p>
       </div>
 
-      {noMatchesToday && nextMatch && <NextMatchCountdown match={nextMatch} />}
+      {noMatchesToday && nextMatch && <NextMatchCountdown match={nextMatch} poolMemberIds={poolMemberIds} />}
 
       {isLoading && <p className="text-muted-foreground">Laddar matcher...</p>}
 
@@ -233,6 +249,7 @@ function TodayPage() {
               ownPick={ownPick}
               allMatchPicks={matchAllPicks}
               jokerCount={jokerCount}
+              poolMemberIds={poolMemberIds}
               onPickSaved={() => {
                 qc.invalidateQueries({ queryKey: ["own-picks-bulk", userId, matchIdsKey] });
               }}
