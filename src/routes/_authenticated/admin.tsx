@@ -173,13 +173,15 @@ function PoolsBlock() {
   }
 
   async function removeMember(poolId: string, userId: string) {
-    await supabase.from("pool_members").delete().eq("pool_id", poolId).eq("user_id", userId);
-    qc.invalidateQueries({ queryKey: ["admin-pool-members"] });
+    const { error } = await supabase.from("pool_members").delete().eq("pool_id", poolId).eq("user_id", userId);
+    if (error) alert(error.message);
+    else qc.invalidateQueries({ queryKey: ["admin-pool-members"] });
   }
 
   async function addMember(poolId: string, userId: string) {
-    await supabase.from("pool_members").upsert({ pool_id: poolId, user_id: userId });
-    qc.invalidateQueries({ queryKey: ["admin-pool-members"] });
+    const { error } = await supabase.from("pool_members").upsert({ pool_id: poolId, user_id: userId });
+    if (error) alert(error.message);
+    else qc.invalidateQueries({ queryKey: ["admin-pool-members"] });
   }
 
   const nameOf = (uid: string) => profiles?.find(p => p.id === uid)?.display_name ?? "Okänd";
