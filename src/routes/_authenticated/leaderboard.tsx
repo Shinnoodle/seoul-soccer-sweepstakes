@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { usePool } from "@/hooks/usePool";
 
 type TabValue = "table" | "prizes" | "tips" | "stats";
 
@@ -52,10 +53,31 @@ function LeaderboardPage() {
     },
   });
 
-  const approvedSet = new Set((allProfiles ?? []).filter((p) => p.approved).map((p) => p.id));
-  const approvedRows = (rows ?? []).filter((r) => r.user_id && approvedSet.has(r.user_id));
-  const unapproved = (allProfiles ?? []).filter((p) => !p.approved);
+const { selectedPool } = usePool();
 
+  const { data: poolMembers } = useQuery({
+    queryKey: ["pool-members", selectedPool?.id],
+    enabled: !!selectedPool,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("pool_members")
+        .select("user_id")
+        .eq("pool_id", selectedPool!.id);
+      if (error) throw error;
+      return data.map((m) => m.user_id);
+    },
+  });
+
+  const approvedSet = new Set((allProfiles ?? []).filter((p) => p.approved).map((p) => p.id));
+  const poolSet = new Set(poolMembers ?? []);
+  const approvedRows = (rows ?? []).filter((r) =>
+    r.user_id &&
+    approvedSet.has(r.user_id) &&
+    (poolMembers === undefined || poolSet.has(r.user_id))
+  );
+  const unapproved = (allProfiles ?? [])
+    .filter((p) => !p.approved && (poolMembers === undefined || poolSet.has(p.id)));
+    
   // Delad placering (1224 style)
   const ranked = useMemo(() => {
     let lastScore: number | null = null;
