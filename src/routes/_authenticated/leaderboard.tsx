@@ -200,7 +200,7 @@ const { selectedPool } = usePool();
         </TabsContent>
 
         <TabsContent value="tips">
-          <LongTermPicksSection onPick={(id, name) => setOpenUser({ id, name })} />
+          <LongTermPicksSection onPick={(id, name) => setOpenUser({ id, name })} poolMemberIds={poolMembers} />
         </TabsContent>
 
         <TabsContent value="stats">
@@ -537,7 +537,7 @@ function UserPicksModal({ userId, name, onClose }: { userId: string; name: strin
   );
 }
 
-function LongTermPicksSection({ onPick }: { onPick: (id: string, name: string) => void }) {
+function LongTermPicksSection({ onPick, poolMemberIds }: { onPick: (id: string, name: string) => void; poolMemberIds?: string[] }) {
   const { data: picks, isLoading } = useQuery({
     queryKey: ["all-longterm"],
     queryFn: async () => {
@@ -609,7 +609,7 @@ function LongTermPicksSection({ onPick }: { onPick: (id: string, name: string) =
         <p className="text-sm text-muted-foreground italic">Inga tips att visa ännu.</p>
       ) : (
         <div className="space-y-3">
-          {picks.map(p => (
+          {(poolMemberIds ? picks.filter(p => poolMemberIds.includes(p.user_id)) : picks).map(p => (
             <div key={p.user_id} className="rounded-xl border border-border p-3 space-y-2">
               <button
                 onClick={() => onPick(p.user_id, nameOf(p.user_id))}
