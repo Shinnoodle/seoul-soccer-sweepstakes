@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, ListChecks, Trophy, User, Shield, LogOut, BookOpen, MessageCircle, Menu, X, Star, Gift, ClipboardList, BarChart3, GitBranch, ChevronDown, Users } from "lucide-react";
+import { Calendar, ListChecks, Trophy, User, Shield, LogOut, BookOpen, MessageCircle, Menu, X, GitBranch, ChevronDown, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePool } from "@/hooks/usePool";
 
@@ -162,22 +162,6 @@ function AuthLayout() {
                 <Link to="/rules" className="flex items-center gap-3 px-4 py-3 text-sm font-semibold hover:bg-accent transition-colors border-b border-border">
                   <BookOpen className="size-5 text-primary" />
                   Regler
-                </Link>
-                <Link to="/profile" className="flex items-center gap-3 px-4 py-3 text-sm font-semibold hover:bg-accent transition-colors border-b border-border">
-                  <Star className="size-5 text-primary" />
-                  Mina turneringstips
-                </Link>
-                <Link to="/leaderboard" search={{ tab: "prizes" }} className="flex items-center gap-3 px-4 py-3 text-sm font-semibold hover:bg-accent transition-colors border-b border-border">
-                  <Gift className="size-5 text-primary" />
-                  Priser
-                </Link>
-                <Link to="/leaderboard" search={{ tab: "tips" }} className="flex items-center gap-3 px-4 py-3 text-sm font-semibold hover:bg-accent transition-colors border-b border-border">
-                  <ClipboardList className="size-5 text-primary" />
-                  Allas tips
-                </Link>
-                <Link to="/leaderboard" search={{ tab: "stats" }} className="flex items-center gap-3 px-4 py-3 text-sm font-semibold hover:bg-accent transition-colors border-b border-border">
-                  <BarChart3 className="size-5 text-primary" />
-                  Statistik
                 </Link>
                 <Link to="/bracket" className="flex items-center gap-3 px-4 py-3 text-sm font-semibold hover:bg-accent transition-colors">
                   <GitBranch className="size-5 text-primary" />
