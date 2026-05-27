@@ -129,7 +129,7 @@ const { selectedPool } = usePool();
         <TabsList className="grid w-full grid-cols-4 h-auto">
           <TabsTrigger value="table">Tabell</TabsTrigger>
           <TabsTrigger value="prizes">Priser</TabsTrigger>
-          <TabsTrigger value="tips">Tips</TabsTrigger>
+          <TabsTrigger value="tips">Allas tips</TabsTrigger>
           <TabsTrigger value="stats">Statistik</TabsTrigger>
         </TabsList>
 
@@ -614,7 +614,7 @@ function LongTermPicksSection({ onPick, poolMemberIds }: { onPick: (id: string, 
       <div>
         <h2 className="font-semibold text-lg">Turneringstips</h2>
         <p className="text-xs text-muted-foreground">
-          Allas tips på vinnare, finalist, semifinalister & skyttekung. Visas för alla efter VM-start (11 juni).
+          Allas tips på vinnare, finalist, semifinalister & skyttekung, slutspelslag. Visas för alla efter VM-start (11 juni).
         </p>
       </div>
       {isLoading ? (
