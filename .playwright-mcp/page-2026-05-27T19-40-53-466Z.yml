@@ -1,0 +1,11 @@
+- generic [ref=e98]:
+  - generic [ref=e99]:
+    - img [ref=e101]
+    - heading "Sweepstakes" [level=1] [ref=e107]
+    - paragraph [ref=e108]: VM tips 2026
+    - paragraph [ref=e109]: Logga in
+  - generic [ref=e110]:
+    - textbox "E-post" [ref=e111]
+    - textbox "Lösenord (min 6 tecken)" [ref=e112]
+    - button "Logga in" [ref=e113]
+  - button "Inget konto? Skapa ett" [ref=e114]

@@ -1,0 +1,84 @@
+- generic [ref=e24]:
+  - banner [ref=e25]:
+    - generic [ref=e26]:
+      - img [ref=e27]
+      - generic [ref=e33]:
+        - generic [ref=e34]: Sweepstakes
+        - generic [ref=e35]: VM tips 2026
+    - generic [ref=e36]:
+      - button "Meny" [ref=e38]:
+        - img [ref=e39]
+      - button "Logga ut" [ref=e40]:
+        - img [ref=e41]
+  - main [ref=e44]:
+    - generic [ref=e45]:
+      - generic [ref=e46]:
+        - heading "Idag" [level=1] [ref=e47]
+        - paragraph [ref=e48]: ons 27 maj
+      - link "⚽ Förbered dina tips innan VM-start! ✗ Turneringstips saknas — vem vinner VM? ✗ Slutspelslag saknas — vilka går vidare från grupperna? Gå till Profil →" [ref=e49] [cursor=pointer]:
+        - /url: /profile
+        - generic [ref=e50]:
+          - generic [ref=e51]: ⚽
+          - generic [ref=e52]: Förbered dina tips innan VM-start!
+        - generic [ref=e53]:
+          - generic [ref=e54]:
+            - generic [ref=e55]: ✗
+            - text: Turneringstips saknas — vem vinner VM?
+          - generic [ref=e56]:
+            - generic [ref=e57]: ✗
+            - text: Slutspelslag saknas — vilka går vidare från grupperna?
+        - paragraph [ref=e58]: Gå till Profil →
+      - generic [ref=e59]:
+        - paragraph [ref=e60]: ⚽ Nästa match om
+        - generic [ref=e61]:
+          - generic [ref=e62]:
+            - generic [ref=e63]: "14"
+            - generic [ref=e64]: dagar
+          - generic [ref=e65]:
+            - generic [ref=e66]: "23"
+            - generic [ref=e67]: tim
+          - generic [ref=e68]:
+            - generic [ref=e69]: "26"
+            - generic [ref=e70]: min
+          - generic [ref=e71]:
+            - generic [ref=e72]: "55"
+            - generic [ref=e73]: sek
+        - paragraph [ref=e74]: 🇲🇽 Mexico 🆚 South Africa 🇿🇦 · tors 11 juni 21:00 (sv tid)
+        - generic [ref=e75]:
+          - generic [ref=e76]:
+            - generic [ref=e77]: Tippstatus
+            - generic [ref=e78]: 1 klara
+            - generic [ref=e79]: 2 kvar
+          - generic [ref=e80]: ✅ Jibra
+          - generic [ref=e81]: ⏳ Björn, Bajskorven
+      - link "🏆 Se VM-trädet 🪾 →" [ref=e83] [cursor=pointer]:
+        - /url: /bracket
+        - generic [ref=e84]: 🏆 Se VM-trädet 🪾
+        - generic [ref=e85]: →
+  - navigation [ref=e86]:
+    - list [ref=e87]:
+      - listitem [ref=e88]:
+        - link "Idag" [ref=e89] [cursor=pointer]:
+          - /url: /today
+          - img [ref=e91]
+          - text: Idag
+      - listitem [ref=e93]:
+        - link "Matcher" [ref=e94] [cursor=pointer]:
+          - /url: /matches
+          - img [ref=e96]
+          - text: Matcher
+      - listitem [ref=e99]:
+        - link "Tabell" [ref=e100] [cursor=pointer]:
+          - /url: /leaderboard
+          - img [ref=e102]
+          - text: Tabell
+      - listitem [ref=e108]:
+        - link "Chat" [ref=e109] [cursor=pointer]:
+          - /url: /chat
+          - img [ref=e111]
+          - text: Chat
+      - listitem [ref=e113]:
+        - link "Profil" [ref=e114] [cursor=pointer]:
+          - /url: /profile
+          - img [ref=e116]
+          - text: Profil
