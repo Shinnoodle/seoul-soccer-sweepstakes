@@ -204,7 +204,7 @@ function TodayPage() {
     },
   });
 
-  const tournamentStarted = tournamentSettings ? new Date(tournamentSettings.start_at) <= new Date() : true;
+  const tournamentStarted = tournamentSettings != null ? new Date(tournamentSettings.start_at) <= new Date() : false;
   const haslongterm = !!ownLongterm;
   const hasR16 = (ownR16Count ?? 0) >= 32;
   const showPrepBanner = !tournamentStarted && (!haslongterm || !hasR16);
