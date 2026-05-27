@@ -91,7 +91,7 @@ const GROUPS: { name: string; color: string; teams: Team[] }[] = [
     name: "Grupp E", color: "text-purple-500",
     teams: [
       { name: "Tyskland", flag: "🇩🇪" },
-      { name: "Komorerna", flag: "🇰🇲" },
+      { name: "Curaçao", flag: "🇨🇼" },
       { name: "Elfenbenskusten", flag: "🇨🇮" },
       { name: "Ecuador", flag: "🇪🇨" },
     ],
@@ -118,7 +118,7 @@ const GROUPS: { name: string; color: string; teams: Team[] }[] = [
     name: "Grupp H", color: "text-teal-500",
     teams: [
       { name: "Spanien", flag: "🇪🇸" },
-      { name: "Eritrea", flag: "🇪🇷" },
+      { name: "Kap Verde", flag: "🇨🇻" },
       { name: "Saudiarabien", flag: "🇸🇦" },
       { name: "Uruguay", flag: "🇺🇾" },
     ],
