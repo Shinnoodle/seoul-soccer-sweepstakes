@@ -137,13 +137,13 @@ function AuthLayout() {
   return (
     <div className="min-h-screen flex flex-col pb-20">
       <header className="px-4 py-3 border-b border-border flex items-center justify-between sticky top-0 bg-background/95 backdrop-blur z-20">
-        <div className="flex items-center gap-2">
+        <Link to="/today" className="flex items-center gap-2">
           <Trophy className="size-5 text-primary" />
           <div className="leading-tight">
             <div className="font-bold text-sm">Sweepstakes</div>
             <div className="text-[10px] text-muted-foreground">VM tips 2026</div>
           </div>
-        </div>
+        </Link>
 
         <div className="flex items-center gap-2 ml-auto">
           <PoolSelector />
