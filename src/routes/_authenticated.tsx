@@ -165,7 +165,7 @@ function AuthLayout() {
                 </Link>
                 <Link to="/profile" className="flex items-center gap-3 px-4 py-3 text-sm font-semibold hover:bg-accent transition-colors border-b border-border">
                   <Star className="size-5 text-primary" />
-                  Turneringstips
+                  Mina turneringstips
                 </Link>
                 <Link to="/leaderboard" search={{ tab: "prizes" }} className="flex items-center gap-3 px-4 py-3 text-sm font-semibold hover:bg-accent transition-colors border-b border-border">
                   <Gift className="size-5 text-primary" />
@@ -173,7 +173,7 @@ function AuthLayout() {
                 </Link>
                 <Link to="/leaderboard" search={{ tab: "tips" }} className="flex items-center gap-3 px-4 py-3 text-sm font-semibold hover:bg-accent transition-colors border-b border-border">
                   <ClipboardList className="size-5 text-primary" />
-                  Tipslistan
+                  Allas tips
                 </Link>
                 <Link to="/leaderboard" search={{ tab: "stats" }} className="flex items-center gap-3 px-4 py-3 text-sm font-semibold hover:bg-accent transition-colors border-b border-border">
                   <BarChart3 className="size-5 text-primary" />
@@ -181,7 +181,7 @@ function AuthLayout() {
                 </Link>
                 <Link to="/bracket" className="flex items-center gap-3 px-4 py-3 text-sm font-semibold hover:bg-accent transition-colors">
                   <GitBranch className="size-5 text-primary" />
-                  Slutspelsträd
+                  VM-trädet
                 </Link>
               </div>
             )}
