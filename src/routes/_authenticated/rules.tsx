@@ -78,8 +78,8 @@ function RulesPage() {
   const entryFee = selectedPool?.entry_fee ?? 200;
   const participants = poolMembers?.length ?? 0;
   const pot = poolMembers != null ? participants * entryFee : null;
-  const prize1 = pot != null ? Math.round((pot - 300 - 200) * 0.6) : null;
-  const prize2 = pot != null ? Math.round((pot - 300 - 200) * 0.3) : null;
+  const prize1 = pot != null ? Math.round((pot - 300 - 300 - 200) * 0.6) : null;
+  const prize2 = pot != null ? Math.round((pot - 300 - 300 - 200) * 0.3) : null;
   const fmt = (n: number) => n.toLocaleString("sv-SE");
 
   return (

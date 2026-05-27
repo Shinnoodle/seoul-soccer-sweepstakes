@@ -361,8 +361,8 @@ function PrizeLeaderSection({ approvedRows, poolMemberIds, entryFee }: { approve
     },
   ];
 
-  const prize1 = pot != null ? Math.round((pot - 300 - 200) * 0.6) : null;
-  const prize2 = pot != null ? Math.round((pot - 300 - 200) * 0.3) : null;
+  const prize1 = pot != null ? Math.round((pot - 300 - 300 - 200) * 0.6) : null;
+  const prize2 = pot != null ? Math.round((pot - 300 - 300 - 200) * 0.3) : null;
   const fmt = (n: number) => n.toLocaleString("sv-SE");
 
   return (
