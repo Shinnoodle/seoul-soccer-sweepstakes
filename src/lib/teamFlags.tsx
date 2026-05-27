@@ -110,6 +110,7 @@ const FLAGS: Record<string, string> = {
   "jordanien": "🇯🇴",
   "kanada": "🇨🇦",
   "kina": "🇨🇳",
+  "kap verde": "🇨🇻",
   "komorerna": "🇰🇲",
   "kroatien": "🇭🇷",
   "marocko": "🇲🇦",
