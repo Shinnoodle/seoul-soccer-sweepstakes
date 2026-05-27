@@ -71,13 +71,25 @@ function RulesPage() {
         .select("user_id")
         .eq("pool_id", selectedPool!.id);
       if (error) throw error;
-      return data;
+      return data.map(m => m.user_id);
     },
   });
 
+  const { data: approvedProfiles } = useQuery({
+    queryKey: ["profiles-approved"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("profiles").select("id").eq("approved", true);
+      if (error) throw error;
+      return new Set(data.map(p => p.id));
+    },
+  });
+
+  const isFreePool = (selectedPool?.entry_fee ?? -1) === 0;
   const entryFee = selectedPool?.entry_fee ?? 200;
-  const participants = poolMembers?.length ?? 0;
-  const pot = poolMembers != null ? participants * entryFee : null;
+  const participants = poolMembers != null && approvedProfiles != null
+    ? poolMembers.filter(id => isFreePool || approvedProfiles.has(id)).length
+    : null;
+  const pot = participants != null ? participants * entryFee : null;
   const prize1 = pot != null ? Math.round((pot - 300 - 300 - 200) * 0.6) : null;
   const prize2 = pot != null ? Math.round((pot - 300 - 300 - 200) * 0.3) : null;
   const fmt = (n: number) => n.toLocaleString("sv-SE");
