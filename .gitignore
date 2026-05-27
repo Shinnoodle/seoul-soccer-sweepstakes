@@ -27,6 +27,9 @@ dist-ssr
 # E2E tests (contains test credentials)
 e2e/
 
+# Playwright MCP snapshots
+.playwright-mcp/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
