@@ -365,16 +365,53 @@ function PrizeLeaderSection({ approvedRows, poolMemberIds, entryFee }: { approve
     },
   ];
 
+  const prize1 = pot != null ? Math.round((pot - 300 - 200) * 0.6) : null;
+  const prize2 = pot != null ? Math.round((pot - 300 - 200) * 0.3) : null;
+  const fmt = (n: number) => n.toLocaleString("sv-SE");
+
   return (
-    <section className="rounded-2xl bg-card border border-border p-4 space-y-3">
-      <div>
-        <h2 className="font-semibold text-lg">🏅 Aktuellt prisläge</h2>
-        <p className="text-xs text-muted-foreground">Uppdateras i realtid — vem leder just nu?</p>
-      </div>
-      <div className="space-y-0">
-        {prizes.map((p) => <PrizeRow key={p.key} prize={p} />)}
-      </div>
-    </section>
+    <div className="space-y-4">
+      {pot != null && (
+        <section className="rounded-2xl bg-card border border-border p-4 space-y-3">
+          <div>
+            <h2 className="font-semibold text-lg">💰 Prispott</h2>
+          </div>
+          <div className="rounded-xl bg-muted p-3 text-center space-y-1">
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">Total prispott</p>
+            <p className="text-3xl font-bold text-primary">{fmt(pot)} kr</p>
+            <p className="text-xs text-muted-foreground">{approvedRows.length} deltagare × {entryFee} kr</p>
+          </div>
+          <div className="space-y-0">
+            {[
+              { emoji: "🥇", label: "Totalsegrare", amount: prize1 != null ? `${fmt(prize1)} kr` : "–", note: "60% av potten" },
+              { emoji: "🥈", label: "Tvåa",          amount: prize2 != null ? `${fmt(prize2)} kr` : "–", note: "30% av potten" },
+              { emoji: "🎯", label: "Matchtips-kungen", amount: "300 kr", note: "Fast pris" },
+              { emoji: "💥", label: "VM skrällen",   amount: "300 kr",  note: "Fast pris" },
+              { emoji: "🔮", label: "VM-Oraklet",    amount: "TBD",     note: "Fast pris" },
+              { emoji: "🤡", label: "Jumbopriset",   amount: "200 kr",  note: "Pengarna tillbaka" },
+            ].map(({ emoji, label, amount, note }) => (
+              <div key={label} className="flex items-center justify-between text-sm py-1.5 border-b border-border last:border-0">
+                <span>{emoji} {label}</span>
+                <div className="text-right">
+                  <span className="font-semibold">{amount}</span>
+                  <span className="text-muted-foreground text-xs ml-2">{note}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section className="rounded-2xl bg-card border border-border p-4 space-y-3">
+        <div>
+          <h2 className="font-semibold text-lg">🏅 Aktuellt prisläge</h2>
+          <p className="text-xs text-muted-foreground">Uppdateras i realtid — vem leder just nu?</p>
+        </div>
+        <div className="space-y-0">
+          {prizes.map((p) => <PrizeRow key={p.key} prize={p} />)}
+        </div>
+      </section>
+    </div>
   );
 }
 
