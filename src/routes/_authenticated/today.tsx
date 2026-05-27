@@ -256,6 +256,17 @@ function TodayPage() {
         <p className="text-sm text-muted-foreground">{fmtDate(today.toISOString())}</p>
       </div>
 
+      <Link to="/rules" className="block rounded-2xl border border-border bg-card p-4 hover:bg-muted/50 transition-colors">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">📋</span>
+            <span className="font-semibold text-sm">Läs reglerna</span>
+          </div>
+          <span className="text-muted-foreground text-xs">→</span>
+        </div>
+        <p className="text-xs text-muted-foreground mt-1">Poäng, jokrar, turneringstips och slutspelslagen.</p>
+      </Link>
+
       {showPrepBanner && (
         <Link to="/profile" className="block rounded-2xl border border-primary/40 bg-primary/5 p-4 space-y-2 hover:bg-primary/10 transition-colors">
           <div className="flex items-center gap-2">
