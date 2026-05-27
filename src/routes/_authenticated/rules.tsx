@@ -76,7 +76,7 @@ function RulesPage() {
   });
 
   const { data: approvedProfiles } = useQuery({
-    queryKey: ["profiles-approved"],
+    queryKey: ["profiles-approved-ids"],
     queryFn: async () => {
       const { data, error } = await supabase.from("profiles").select("id").eq("approved", true);
       if (error) throw error;
