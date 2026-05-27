@@ -335,10 +335,6 @@ function PrizeLeaderSection({ approvedRows, poolMemberIds, entryFee }: { approve
   const pot = entryFee != null && poolMemberIds != null ? approvedRows.length * entryFee : null;
 
   const prizes: Prize[] = [
-    ...(pot != null ? [{
-      key: "pot", emoji: "💰", label: "Pott",
-      entries: [{ name: `${approvedRows.length} spelare × ${entryFee} kr`, detail: `${pot} kr` }],
-    }] : []),
     {
       key: "first", emoji: "🥇", label: "Totalsegrare",
       entries: firstPlace.map((r) => ({ name: r.display_name ?? "–", detail: `${r.total_points}p` })),
