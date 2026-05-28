@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { usePool } from "@/hooks/usePool";
+import { WC_GROUPS } from "@/lib/wcGroups";
 
 type TabValue = "table" | "prizes" | "tips" | "stats";
 
@@ -492,6 +493,25 @@ function UserPicksModal({ userId, name, onClose }: { userId: string; name: strin
     },
   });
 
+  const { data: r16rows } = useQuery({
+    queryKey: ["user-r16", userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("r16_picks").select("group_letter,team_name,position").eq("user_id", userId).order("group_letter");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const r16ByGroup = useMemo(() => {
+    const map: Record<string, { 1?: string; 2?: string; 3?: string }> = {};
+    for (const r of r16rows ?? []) {
+      map[r.group_letter] ??= {};
+      map[r.group_letter][r.position as 1 | 2 | 3] = r.team_name;
+    }
+    return map;
+  }, [r16rows]);
+
   const now = Date.now();
   const sorted = (picks ?? [])
     .filter((p) => p.matches)
@@ -523,6 +543,34 @@ function UserPicksModal({ userId, name, onClose }: { userId: string; name: strin
                 <div>🥈 Finalist: <span className="font-semibold"><TeamFlag name={lt.runner_up} /> {lt.runner_up}</span></div>
                 <div>🥉 Semi: <span className="font-semibold"><TeamFlag name={lt.semi1} /> {lt.semi1}, <TeamFlag name={lt.semi2} /> {lt.semi2}</span></div>
                 <div>⚽ Skyttekung: <span className="font-semibold">{lt.top_scorer}</span></div>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground italic rounded-xl bg-background/50 border border-border p-3">
+                Dolt fram till VM-start (11 juni 2026).
+              </p>
+            )}
+          </section>
+
+          <section className="space-y-1.5">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Slutspelslag</h3>
+            {r16rows && r16rows.length > 0 ? (
+              <div className="rounded-xl bg-background/50 border border-border p-3 text-sm">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                  {WC_GROUPS.map(g => {
+                    const sel = r16ByGroup[g.letter];
+                    if (!sel) return null;
+                    return (
+                      <div key={g.letter} className="flex items-start gap-1.5">
+                        <span className="text-muted-foreground w-4 shrink-0">{g.letter}</span>
+                        <span className="flex gap-0.5 flex-wrap">
+                          {([1, 2, 3] as const).map(pos => sel[pos] ? (
+                            <span key={pos} title={sel[pos]} className="text-base">{teamFlag(sel[pos]!)}</span>
+                          ) : null)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             ) : (
               <p className="text-sm text-muted-foreground italic rounded-xl bg-background/50 border border-border p-3">
