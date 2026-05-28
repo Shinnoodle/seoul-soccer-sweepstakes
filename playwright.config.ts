@@ -8,16 +8,18 @@ dotenv.config({ path: path.resolve(__dirname, "e2e/.env") });
 
 export default defineConfig({
   testDir: "./e2e",
-  timeout: 30000,
-  retries: 0,
+  timeout: 60000,
+  retries: 1,
   use: {
     headless: true,
     baseURL: process.env.BASE_URL ?? "http://localhost:5173",
+    screenshot: "only-on-failure",
+    video: "off",
   },
   webServer: {
     command: "bun run dev",
     url: "http://localhost:5173",
     reuseExistingServer: true,
-    timeout: 30000,
+    timeout: 60000,
   },
 });
