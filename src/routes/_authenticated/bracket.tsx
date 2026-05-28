@@ -323,7 +323,7 @@ function BracketPage() {
   return (
     <div className="p-4 space-y-6">
       <h1 className="text-2xl font-bold">VM-bracket 2026</h1>
-      <p className="text-sm text-muted-foreground">Uppdateras när lagen är klara efter gruppspelet.</p>
+      <p className="text-sm text-muted-foreground">Uppdateras efterhand matcherna har spelats.</p>
 
       <section className="space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Grupper</h2>
