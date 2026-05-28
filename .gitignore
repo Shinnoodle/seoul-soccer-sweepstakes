@@ -24,8 +24,8 @@ dist-ssr
 .env
 .env.*
 
-# E2E tests (contains test credentials)
-e2e/
+# E2E test credentials
+e2e/.env
 
 # Playwright MCP snapshots
 .playwright-mcp/
