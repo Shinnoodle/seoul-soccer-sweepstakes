@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { WC_GROUPS, TEAM_EN_TO_GROUP, TEAM_EN_TO_SV } from "@/lib/wcGroups";
+import { WC_GROUPS, TEAM_EN_TO_SV } from "@/lib/wcGroups";
+import { calculateGroupStandings } from "@/lib/standings";
 import { TeamFlag } from "@/lib/teamFlags";
 
 export const Route = createFileRoute("/_authenticated/bracket")({
@@ -165,11 +166,6 @@ const GROUPS: { name: string; color: string; teams: Team[] }[] = [
   },
 ];
 
-type StandingRow = {
-  team: string; played: number; won: number; drawn: number; lost: number;
-  gf: number; ga: number; gd: number; pts: number;
-};
-
 function useGroupStandings() {
   const { data: matches } = useQuery({
     queryKey: ["group-matches"],
@@ -182,44 +178,13 @@ function useGroupStandings() {
     },
     refetchInterval: 60000,
   });
-
-  const standings = new Map<string, Map<string, StandingRow>>();
-  for (const g of WC_GROUPS) {
-    const rows = new Map<string, StandingRow>();
-    for (const en of g.teamsEn) {
-      rows.set(en, { team: en, played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0, gd: 0, pts: 0 });
-    }
-    standings.set(g.letter, rows);
-  }
-
-  for (const m of matches ?? []) {
-    if (m.home_score === null || m.away_score === null) continue;
-    const group = TEAM_EN_TO_GROUP[m.home_team] ?? TEAM_EN_TO_GROUP[m.away_team];
-    if (!group) continue;
-    const rows = standings.get(group)!;
-    const home = rows.get(m.home_team);
-    const away = rows.get(m.away_team);
-    if (!home || !away) continue;
-    home.played++; away.played++;
-    home.gf += m.home_score; home.ga += m.away_score;
-    away.gf += m.away_score; away.ga += m.home_score;
-    home.gd = home.gf - home.ga; away.gd = away.gf - away.ga;
-    if (m.home_score > m.away_score) { home.won++; home.pts += 3; away.lost++; }
-    else if (m.home_score < m.away_score) { away.won++; away.pts += 3; home.lost++; }
-    else { home.drawn++; home.pts++; away.drawn++; away.pts++; }
-  }
-
-  return standings;
+  return calculateGroupStandings(matches ?? []);
 }
 
 function GroupTable({ group }: { group: typeof WC_GROUPS[0] }) {
   const standings = useGroupStandings();
-  const rows = standings.get(group.letter);
-  if (!rows) return null;
-
-  const sorted = [...rows.values()].sort((a, b) =>
-    b.pts - a.pts || b.gd - a.gd || b.gf - a.gf || a.team.localeCompare(b.team)
-  );
+  const sorted = standings.get(group.letter);
+  if (!sorted) return null;
 
   return (
     <div className="rounded-2xl border border-border bg-card overflow-hidden">
