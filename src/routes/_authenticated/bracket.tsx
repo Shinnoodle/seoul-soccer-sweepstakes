@@ -1,4 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { WC_GROUPS, TEAM_EN_TO_GROUP, TEAM_EN_TO_SV } from "@/lib/wcGroups";
+import { TeamFlag } from "@/lib/teamFlags";
 
 export const Route = createFileRoute("/_authenticated/bracket")({
   component: BracketPage,
@@ -161,6 +165,114 @@ const GROUPS: { name: string; color: string; teams: Team[] }[] = [
   },
 ];
 
+type StandingRow = {
+  team: string; played: number; won: number; drawn: number; lost: number;
+  gf: number; ga: number; gd: number; pts: number;
+};
+
+function useGroupStandings() {
+  const { data: matches } = useQuery({
+    queryKey: ["group-matches"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("matches").select("home_team,away_team,home_score,away_score,finished")
+        .eq("stage", "group");
+      if (error) throw error;
+      return data;
+    },
+    refetchInterval: 60000,
+  });
+
+  const standings = new Map<string, Map<string, StandingRow>>();
+  for (const g of WC_GROUPS) {
+    const rows = new Map<string, StandingRow>();
+    for (const en of g.teamsEn) {
+      rows.set(en, { team: en, played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0, gd: 0, pts: 0 });
+    }
+    standings.set(g.letter, rows);
+  }
+
+  for (const m of matches ?? []) {
+    if (m.home_score === null || m.away_score === null) continue;
+    const group = TEAM_EN_TO_GROUP[m.home_team] ?? TEAM_EN_TO_GROUP[m.away_team];
+    if (!group) continue;
+    const rows = standings.get(group)!;
+    const home = rows.get(m.home_team);
+    const away = rows.get(m.away_team);
+    if (!home || !away) continue;
+    home.played++; away.played++;
+    home.gf += m.home_score; home.ga += m.away_score;
+    away.gf += m.away_score; away.ga += m.home_score;
+    home.gd = home.gf - home.ga; away.gd = away.gf - away.ga;
+    if (m.home_score > m.away_score) { home.won++; home.pts += 3; away.lost++; }
+    else if (m.home_score < m.away_score) { away.won++; away.pts += 3; home.lost++; }
+    else { home.drawn++; home.pts++; away.drawn++; away.pts++; }
+  }
+
+  return standings;
+}
+
+function GroupTable({ group }: { group: typeof WC_GROUPS[0] }) {
+  const standings = useGroupStandings();
+  const rows = standings.get(group.letter);
+  if (!rows) return null;
+
+  const sorted = [...rows.values()].sort((a, b) =>
+    b.pts - a.pts || b.gd - a.gd || b.gf - a.gf || a.team.localeCompare(b.team)
+  );
+
+  return (
+    <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border">
+        <div className="flex gap-0.5">
+          {group.teamsEn.map(en => <TeamFlag key={en} name={en} className="text-base" />)}
+        </div>
+        <span className={`text-xs font-bold uppercase tracking-wide ${group.color}`}>Grupp {group.letter}</span>
+      </div>
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="text-muted-foreground border-b border-border">
+            <th className="text-left px-3 py-1.5 font-medium w-6">#</th>
+            <th className="text-left px-1 py-1.5 font-medium">Lag</th>
+            <th className="text-center px-1.5 py-1.5 font-medium">S</th>
+            <th className="text-center px-1.5 py-1.5 font-medium">V</th>
+            <th className="text-center px-1.5 py-1.5 font-medium">O</th>
+            <th className="text-center px-1.5 py-1.5 font-medium">F</th>
+            <th className="text-center px-1.5 py-1.5 font-medium">Mål</th>
+            <th className="text-center px-1.5 py-1.5 font-medium">D</th>
+            <th className="text-center px-2 py-1.5 font-bold">P</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sorted.map((r, i) => {
+            const sv = TEAM_EN_TO_SV[r.team] ?? r.team;
+            const qualifies = i < 2;
+            const thirdPlace = i === 2;
+            return (
+              <tr key={r.team} className={`border-b border-border last:border-0 ${qualifies ? "bg-success/5" : thirdPlace ? "bg-warning/5" : ""}`}>
+                <td className="px-3 py-2 text-muted-foreground">{i + 1}</td>
+                <td className="px-1 py-2">
+                  <div className="flex items-center gap-1.5">
+                    <TeamFlag name={r.team} />
+                    <span className="font-medium">{sv}</span>
+                  </div>
+                </td>
+                <td className="text-center px-1.5 py-2 text-muted-foreground">{r.played}</td>
+                <td className="text-center px-1.5 py-2 text-muted-foreground">{r.won}</td>
+                <td className="text-center px-1.5 py-2 text-muted-foreground">{r.drawn}</td>
+                <td className="text-center px-1.5 py-2 text-muted-foreground">{r.lost}</td>
+                <td className="text-center px-1.5 py-2 text-muted-foreground">{r.gf}–{r.ga}</td>
+                <td className="text-center px-1.5 py-2 text-muted-foreground">{r.gd > 0 ? `+${r.gd}` : r.gd}</td>
+                <td className="text-center px-2 py-2 font-bold">{r.pts}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function BracketPage() {
   const r16Left = [
     { top: { label: "1E" }, bottom: { label: "3 ABCDF" } },
@@ -215,10 +327,8 @@ function BracketPage() {
 
       <section className="space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Grupper</h2>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-          {GROUPS.map((g) => (
-            <GroupCard key={g.name} {...g} />
-          ))}
+        <div className="space-y-3">
+          {WC_GROUPS.map(g => <GroupTable key={g.letter} group={g} />)}
         </div>
       </section>
 
