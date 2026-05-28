@@ -277,11 +277,12 @@ function PrizeLeaderSection({ approvedRows, poolMemberIds, entryFee }: { approve
     if (!outcome) continue;
 
     const stagePoints = (stage: string) => {
-      if (stage === "group") return exact ? 4 : 1;
-      if (stage === "r16") return exact ? 5 : 2;
-      if (stage === "qf") return exact ? 6 : 3;
-      if (stage === "sf" || stage === "third") return exact ? 8 : 4;
-      if (stage === "final") return exact ? 12 : 5;
+      if (stage === "group") return exact ? 4 : 2;
+      if (stage === "r16") return exact ? 4 : 2;
+      if (stage === "r8") return exact ? 6 : 3;
+      if (stage === "qf") return exact ? 8 : 4;
+      if (stage === "sf" || stage === "third") return exact ? 10 : 5;
+      if (stage === "final") return exact ? 12 : 6;
       return 0;
     };
 
@@ -773,11 +774,12 @@ function StatsSection({ poolMemberIds }: { poolMemberIds?: string[] }) {
   const sign = (n: number) => (n > 0 ? 1 : n < 0 ? -1 : 0);
 
   const stagePoints = (stage: string, exact: boolean, outcome: boolean) => {
-    if (stage === "group") return exact ? 4 : outcome ? 1 : 0;
-    if (stage === "r16") return exact ? 5 : outcome ? 2 : 0;
-    if (stage === "qf") return exact ? 6 : outcome ? 3 : 0;
-    if (stage === "sf" || stage === "third") return exact ? 8 : outcome ? 4 : 0;
-    if (stage === "final") return exact ? 12 : outcome ? 5 : 0;
+    if (stage === "group") return exact ? 4 : outcome ? 2 : 0;
+    if (stage === "r16") return exact ? 4 : outcome ? 2 : 0;
+    if (stage === "r8") return exact ? 6 : outcome ? 3 : 0;
+    if (stage === "qf") return exact ? 8 : outcome ? 4 : 0;
+    if (stage === "sf" || stage === "third") return exact ? 10 : outcome ? 5 : 0;
+    if (stage === "final") return exact ? 12 : outcome ? 6 : 0;
     return 0;
   };
 

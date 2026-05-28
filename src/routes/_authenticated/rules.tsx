@@ -174,15 +174,15 @@ function RulesPage() {
         ]} />
         <StagePoints stage="Åttondel" rows={[
           { label: "Rätt vinnare", points: "3 p" },
-          { label: "Exakt resultat", points: "5 p" },
+          { label: "Exakt resultat", points: "6 p" },
         ]} />
         <StagePoints stage="Kvartsfinal" rows={[
           { label: "Rätt vinnare", points: "4 p" },
-          { label: "Exakt resultat", points: "6 p" },
+          { label: "Exakt resultat", points: "8 p" },
         ]} />
         <StagePoints stage="Semifinal & bronsmatch" rows={[
           { label: "Rätt vinnare", points: "5 p" },
-          { label: "Exakt resultat", points: "8 p" },
+          { label: "Exakt resultat", points: "10 p" },
         ]} />
         <StagePoints stage="Final" rows={[
           { label: "Rätt vinnare", points: "6 p" },

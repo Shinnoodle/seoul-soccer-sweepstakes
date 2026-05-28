@@ -86,7 +86,7 @@ function AllPicksPanel({ picks, match, nameOf }: AllPicksPanelProps) {
 type Match = {
   id: string;
   match_number: number;
-  stage: "group" | "r16" | "qf" | "quarterfinal" | "sf" | "third" | "final";
+  stage: "group" | "r16" | "r8" | "qf" | "sf" | "third" | "final";
   kickoff: string;
   home_team: string;
   away_team: string;

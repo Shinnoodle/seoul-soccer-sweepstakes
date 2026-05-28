@@ -15,7 +15,7 @@ export const Route = createFileRoute("/_authenticated/today")({
 type Match = {
   id: string;
   match_number: number;
-  stage: "group" | "r16" | "qf" | "sf" | "third" | "final";
+  stage: "group" | "r16" | "r8" | "qf" | "sf" | "third" | "final";
   kickoff: string;
   home_team: string;
   away_team: string;
