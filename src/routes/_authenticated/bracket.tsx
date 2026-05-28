@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { WC_GROUPS, TEAM_EN_TO_SV } from "@/lib/wcGroups";
 import { calculateGroupStandings } from "@/lib/standings";
 import { TeamFlag } from "@/lib/teamFlags";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/_authenticated/bracket")({
   component: BracketPage,
@@ -286,54 +287,56 @@ function BracketPage() {
   ];
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-4 space-y-4">
       <h1 className="text-2xl font-bold">VM-bracket 2026</h1>
-      <p className="text-sm text-muted-foreground">Uppdateras efterhand matcherna har spelats.</p>
 
-      <section className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Grupper</h2>
-        <div className="space-y-3">
+      <Tabs defaultValue="grupper">
+        <TabsList className="w-full">
+          <TabsTrigger value="grupper" className="flex-1">Grupper</TabsTrigger>
+          <TabsTrigger value="slutspel" className="flex-1">Slutspel</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="grupper" className="space-y-3 mt-4">
           {WC_GROUPS.map(g => <GroupTable key={g.letter} group={g} />)}
-        </div>
-      </section>
+        </TabsContent>
 
-      <section className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Slutspel</h2>
-        <div className="overflow-x-auto pb-4">
-          <div className="flex gap-4 min-w-max">
-            <div className="flex flex-col gap-2">
-              <Round title="16-delsfinal (vänster)" matchups={r16Left} />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Round title="Åttondelsfinal" matchups={qfLeft} />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Round title="Kvartsfinal" matchups={sfLeft} />
-            </div>
-            <div className="flex flex-col items-center justify-center gap-2">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground text-center">Semifinal & Final</p>
-              <Matchup top={{ label: "KV-vinnare 1" }} bottom={{ label: "KV-vinnare 2" }} />
-              <div className="mt-2 rounded-xl border-2 border-primary px-3 py-2 text-center">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Världsmästare</p>
-                <p className="text-sm font-bold text-primary">?</p>
+        <TabsContent value="slutspel" className="mt-4">
+          <div className="overflow-x-auto pb-4">
+            <div className="flex gap-4 min-w-max">
+              <div className="flex flex-col gap-2">
+                <Round title="16-delsfinal (vänster)" matchups={r16Left} />
               </div>
-              <div className="mt-1 rounded-lg border border-border px-3 py-1.5 text-center">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Bronsmatch</p>
-                <p className="text-xs font-semibold">SF-förlorare</p>
+              <div className="flex flex-col gap-2">
+                <Round title="Åttondelsfinal" matchups={qfLeft} />
               </div>
-            </div>
-            <div className="flex flex-col gap-2">
-              <Round title="Kvartsfinal" matchups={sfRight} />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Round title="Åttondelsfinal" matchups={qfRight} />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Round title="16-delsfinal (höger)" matchups={r16Right} />
+              <div className="flex flex-col gap-2">
+                <Round title="Kvartsfinal" matchups={sfLeft} />
+              </div>
+              <div className="flex flex-col items-center justify-center gap-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground text-center">Semifinal & Final</p>
+                <Matchup top={{ label: "KV-vinnare 1" }} bottom={{ label: "KV-vinnare 2" }} />
+                <div className="mt-2 rounded-xl border-2 border-primary px-3 py-2 text-center">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Världsmästare</p>
+                  <p className="text-sm font-bold text-primary">?</p>
+                </div>
+                <div className="mt-1 rounded-lg border border-border px-3 py-1.5 text-center">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Bronsmatch</p>
+                  <p className="text-xs font-semibold">SF-förlorare</p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Round title="Kvartsfinal" matchups={sfRight} />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Round title="Åttondelsfinal" matchups={qfRight} />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Round title="16-delsfinal (höger)" matchups={r16Right} />
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
