@@ -537,7 +537,7 @@ function UserPicksModal({ userId, name, onClose }: { userId: string; name: strin
         <div className="overflow-y-auto p-4 space-y-4">
           <section className="space-y-1.5">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Turneringstips</h3>
-            {lt ? (
+            {(isSelf || now >= new Date("2026-06-11").getTime()) && lt ? (
               <div className="rounded-xl bg-background/50 border border-border p-3 text-sm space-y-1">
                 <div>🏆 Vinnare: <span className="font-semibold"><TeamFlag name={lt.champion} /> {lt.champion}</span></div>
                 <div>🥈 Finalist: <span className="font-semibold"><TeamFlag name={lt.runner_up} /> {lt.runner_up}</span></div>
@@ -553,7 +553,7 @@ function UserPicksModal({ userId, name, onClose }: { userId: string; name: strin
 
           <section className="space-y-1.5">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Slutspelslag</h3>
-            {r16rows && r16rows.length > 0 ? (
+            {(isSelf || now >= new Date("2026-06-11").getTime()) && r16rows && r16rows.length > 0 ? (
               <div className="rounded-xl bg-background/50 border border-border p-3 text-sm">
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                   {WC_GROUPS.map(g => {
