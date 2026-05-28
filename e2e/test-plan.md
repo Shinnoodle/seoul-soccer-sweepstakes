@@ -126,9 +126,11 @@ Example: set South Korea 1–1 Czechia (Grupp A match).
 3. **Expect:** Tournament picks section is shown (long-term picks, R16 picks)
 
 ### 8. Logout
-1. From any authenticated page, find and click logout
-2. **Expect:** Redirected to `/login`
-3. **Expect:** Navigating to `/today` redirects back to `/login`
+1. Log in with TEST_EMAIL / TEST_PASSWORD (see e2e/.env)
+2. Click the logout button (icon-knapp längst till höger i headern, aria-label="Logga ut")
+3. **Expect:** Redirected to `/login`
+4. Navigate to `/today`
+5. **Expect:** Redirected back to `/login` (ej inloggad)
 
 ---
 
