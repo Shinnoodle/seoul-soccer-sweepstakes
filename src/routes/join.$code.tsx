@@ -25,7 +25,7 @@ function JoinPage() {
       // Hitta poolen
       const { data: pool, error } = await supabase
         .from("pools")
-        .select("id, name")
+        .select("id, name, entry_fee")
         .eq("invite_code", code)
         .single();
 
@@ -57,6 +57,10 @@ function JoinPage() {
       if (joinError) {
         setStatus("error");
         return;
+      }
+
+      if (pool.entry_fee === 0) {
+        await supabase.from("profiles").update({ approved: true }).eq("id", user.id);
       }
 
       setStatus("success");

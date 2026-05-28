@@ -16,8 +16,13 @@ async function handlePendingInvite(userId: string) {
 
   if (code) {
     const { data: pool } = await supabase
-      .from("pools").select("id").eq("invite_code", code).single();
-    if (pool) poolId = pool.id;
+      .from("pools").select("id, entry_fee").eq("invite_code", code).single();
+    if (pool) {
+      poolId = pool.id;
+      if (pool.entry_fee === 0) {
+        await supabase.from("profiles").update({ approved: true }).eq("id", userId);
+      }
+    }
   }
 
   if (!poolId) {
