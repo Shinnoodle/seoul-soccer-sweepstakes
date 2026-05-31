@@ -219,7 +219,7 @@ function pickTeam(letter: string, team: string, pos: 1 | 2 | 3) {
 
   return (
     <div className="p-4 space-y-6">
-      <h1 className="text-2xl font-bold">Min profil</h1>
+      <h1 className="text-2xl font-bold">Turnering</h1>
 
       <section className="rounded-2xl bg-card border border-border p-4 space-y-3">
         <h2 className="font-semibold">Profil</h2>

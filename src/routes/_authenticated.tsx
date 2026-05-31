@@ -130,7 +130,7 @@ function AuthLayout() {
     { to: "/matches", label: "Matcher", icon: ListChecks },
     { to: "/leaderboard", label: "Tabell", icon: Trophy },
     { to: "/chat", label: "Chat", icon: MessageCircle },
-    { to: "/profile", label: "Profil", icon: User },
+    { to: "/profile", label: "Turnering", icon: User },
     ...(isAdmin ? [{ to: "/admin", label: "Admin", icon: Shield }] : []),
   ];
 
