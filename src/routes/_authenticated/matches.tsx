@@ -142,6 +142,8 @@ function MatchesPage() {
         </button>
       )}
 
+      <p className="text-xs text-muted-foreground">Matchtips låses när matchen startar — se till att tippa i tid!</p>
+
       <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-1">
         {STAGES.map(s => (
           <button key={s}

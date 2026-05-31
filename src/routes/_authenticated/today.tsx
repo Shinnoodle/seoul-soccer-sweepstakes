@@ -279,7 +279,7 @@ function TodayPage() {
             {!hasR16 && <div className="flex items-center gap-1.5"><span className="text-destructive font-bold">✗</span> Slutspelslag saknas — vilka går vidare från grupperna?</div>}
             {hasR16 && <div className="flex items-center gap-1.5"><span className="text-success font-bold">✓</span> Slutspelslag klart</div>}
           </div>
-          <p className="text-xs text-primary font-semibold">Gå till Profil →</p>
+          <p className="text-xs text-primary font-semibold">Gå till Turnering →</p>
         </Link>
       )}
 

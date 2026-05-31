@@ -221,6 +221,12 @@ function pickTeam(letter: string, team: string, pos: 1 | 2 | 3) {
     <div className="p-4 space-y-6">
       <h1 className="text-2xl font-bold">Turnering</h1>
 
+      {!started && (
+        <div className="rounded-2xl border border-warning/40 bg-warning/5 p-4 text-sm text-warning">
+          Turneringstips och slutspelslag låses när VM startar. Se till att spara dina val innan dess!
+        </div>
+      )}
+
       <section className="rounded-2xl bg-card border border-border p-4 space-y-3">
         <h2 className="font-semibold">Profil</h2>
         <div className="space-y-2">
