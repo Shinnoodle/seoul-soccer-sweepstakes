@@ -90,8 +90,8 @@ function RulesPage() {
     ? poolMembers.filter(id => isFreePool || approvedProfiles.has(id)).length
     : null;
   const pot = participants != null ? participants * entryFee : null;
-  const prize1 = pot != null ? Math.round((pot - 300 - 200 - 300 - 200) * 0.7) : null;
-  const prize2 = pot != null ? Math.round((pot - 300 - 200 - 300 - 200) * 0.3) : null;
+  const prize1 = pot != null ? Math.round((pot - 300 - 200 - 300 - 200) * 0,7) : null;
+  const prize2 = pot != null ? Math.round((pot - 300 - 200 - 300 - 200) * 0,3) : null;
   const fmt = (n: number) => n.toLocaleString("sv-SE");
 
   return (
