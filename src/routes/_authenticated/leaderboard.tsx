@@ -363,8 +363,8 @@ function PrizeLeaderSection({ approvedRows, poolMemberIds, entryFee }: { approve
     },
   ];
 
-  const prize1 = pot != null ? Math.round((pot - 300 - 300 - 200) * 0.6) : null;
-  const prize2 = pot != null ? Math.round((pot - 300 - 300 - 200) * 0.3) : null;
+  const prize1 = pot != null ? Math.round((pot - 300 - 200 - 300 - 200) * 0.7) : null;
+  const prize2 = pot != null ? Math.round((pot - 300 200 - 300 - 200) * 0.3) : null;
   const fmt = (n: number) => n.toLocaleString("sv-SE");
 
   return (
@@ -381,11 +381,11 @@ function PrizeLeaderSection({ approvedRows, poolMemberIds, entryFee }: { approve
           </div>
           <div className="space-y-0">
             {[
-              { emoji: "🥇", label: "Totalsegrare", amount: prize1 != null ? `${fmt(prize1)} kr` : "–", note: "60% av potten" },
-              { emoji: "🥈", label: "Tvåa",          amount: prize2 != null ? `${fmt(prize2)} kr` : "–", note: "30% av potten" },
+              { emoji: "🥇", label: "Totalsegrare", amount: prize1 != null ? `${fmt(prize1)} kr` : "–", note: "70% av rörlig pott" },
+              { emoji: "🥈", label: "Tvåa",          amount: prize2 != null ? `${fmt(prize2)} kr` : "–", note: "30% av rörlig pott" },
               { emoji: "🎯", label: "Matchtips-kungen", amount: "300 kr", note: "Fast pris" },
-              { emoji: "💥", label: "VM skrällen",   amount: "300 kr",  note: "Fast pris" },
-              { emoji: "🔮", label: "VM-Oraklet",    amount: "TBD",     note: "Fast pris" },
+              { emoji: "💥", label: "VM skrällen",   amount: "200 kr",  note: "Fast pris" },
+              { emoji: "🔮", label: "VM-Oraklet",    amount: "300 kr",     note: "Fast pris" },
               { emoji: "🤡", label: "Jumbopriset",   amount: "200 kr",  note: "Pengarna tillbaka" },
             ].map(({ emoji, label, amount, note }) => (
               <div key={label} className="flex items-center justify-between text-sm py-1.5 border-b border-border last:border-0">
