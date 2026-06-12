@@ -69,6 +69,65 @@ const { selectedPool } = usePool();
     },
   });
 
+    const { data: finishedMatches } = useQuery({
+    queryKey: ["lb-matches"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("matches")
+        .select("id,home_score,away_score,finished")
+        .eq("finished", true);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: allPicks } = useQuery({
+    queryKey: ["lb-picks"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("match_picks")
+        .select("user_id,match_id,home_score,away_score");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Upset bonus per pool: +1 for correct outcome when fewer than half of the pool picked the same outcome
+  const upsetByUser = useMemo(() => {
+    const result = new Map<string, number>();
+    if (!finishedMatches || !allPicks) return result;
+    const poolSetLocal = poolMembers ? new Set(poolMembers) : null;
+    const sign = (n: number) => (n > 0 ? 1 : n < 0 ? -1 : 0);
+    const matchById = new Map(finishedMatches.map(m => [m.id, m]));
+
+    const picksInPool = poolSetLocal
+      ? allPicks.filter(p => poolSetLocal.has(p.user_id))
+      : allPicks;
+
+    const picksPerMatch = new Map<string, typeof picksInPool>();
+    for (const p of picksInPool) {
+      if (!matchById.has(p.match_id)) continue;
+      const arr = picksPerMatch.get(p.match_id) ?? [];
+      arr.push(p);
+      picksPerMatch.set(p.match_id, arr);
+    }
+
+    for (const p of picksInPool) {
+      const m = matchById.get(p.match_id);
+      if (!m || m.home_score === null || m.away_score === null) continue;
+      const outcome = sign(p.home_score - p.away_score) === sign(m.home_score - m.away_score);
+      if (!outcome) continue;
+      const all = picksPerMatch.get(p.match_id) ?? [];
+      const actualOutcome = sign(m.home_score - m.away_score);
+      const sameOutcome = all.filter(x => sign(x.home_score - x.away_score) === actualOutcome).length;
+      if (sameOutcome * 2 < all.length) {
+        result.set(p.user_id, (result.get(p.user_id) ?? 0) + 1);
+      }
+    }
+    return result;
+  }, [finishedMatches, allPicks, poolMembers]);
+
+  
   const isFreePool = (selectedPool?.entry_fee ?? -1) === 0;
   const approvedSet = new Set((allProfiles ?? []).filter((p) => p.approved || isFreePool).map((p) => p.id));
   const poolSet = new Set(poolMembers ?? []);
