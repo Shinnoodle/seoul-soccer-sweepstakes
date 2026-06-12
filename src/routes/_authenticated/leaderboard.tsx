@@ -131,11 +131,23 @@ const { selectedPool } = usePool();
   const isFreePool = (selectedPool?.entry_fee ?? -1) === 0;
   const approvedSet = new Set((allProfiles ?? []).filter((p) => p.approved || isFreePool).map((p) => p.id));
   const poolSet = new Set(poolMembers ?? []);
-  const approvedRows = (rows ?? []).filter((r) =>
-    r.user_id &&
-    approvedSet.has(r.user_id) &&
-    (poolMembers === undefined || poolSet.has(r.user_id))
-  );
+
+    const approvedRows = (rows ?? [])
+    .filter((r) =>
+      r.user_id &&
+      approvedSet.has(r.user_id) &&
+      (poolMembers === undefined || poolSet.has(r.user_id))
+    )
+    .map((r) => {
+      const upset = upsetByUser.get(r.user_id!) ?? 0;
+      return {
+        ...r,
+        match_points: (r.match_points ?? 0) + upset,
+        total_points: (r.total_points ?? 0) + upset,
+      };
+    });
+
+  
   const unapproved = isFreePool ? [] : (allProfiles ?? [])
     .filter((p) => !p.approved && (poolMembers === undefined || poolSet.has(p.id)));
     
