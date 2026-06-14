@@ -143,9 +143,11 @@ const { selectedPool } = usePool();
       return {
         ...r,
         match_points: (r.match_points ?? 0) + upset,
-        total_points: (r.total_points ?? 0) + upset,
-      };
-    });
+        total_points: (r.total_points ?? 0) +   upset,
+      }
+    })
+        .sort((a, b) => (b.total_points ?? 0) - (a.total_points ?? 0));
+  
 
   
   const unapproved = isFreePool ? [] : (allProfiles ?? [])
