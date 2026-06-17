@@ -242,7 +242,7 @@ const upsetByUser = useMemo(() => {
         </TabsContent>
 
         <TabsContent value="stats">
-          <StatsSection poolMemberIds={poolMembers} />
+          <StatsSection poolMemberIds={poolMembers} upsetBonuses={upsetBonuses} />
         </TabsContent>
       </Tabs>
 
@@ -801,7 +801,7 @@ type StatRow = {
   jokerWins: number;
 };
 
-function StatsSection({ poolMemberIds }: { poolMemberIds?: string[] }) {
+function StatsSection({ poolMemberIds, upsetBonuses }: { poolMemberIds?: string[], upsetBonuses?: { user_id: string; upset_bonus: number }[] }) {
   const { data: matches } = useQuery({
     queryKey: ["stats-matches"],
     queryFn: async () => {
@@ -902,13 +902,6 @@ function StatsSection({ poolMemberIds }: { poolMemberIds?: string[] }) {
       s.miss++;
     }
 
-    if (outcome) {
-      const all = picksPerMatch.get(p.match_id) ?? [];
-      const actualOutcome = sign(m.home_score - m.away_score);
-      const sameOutcome = all.filter((x) => sign(x.home_score - x.away_score) === actualOutcome).length;
-      if (all.length >= 3 && sameOutcome * 2 < all.length) s.upset++;
-    }
-
     const pts = stagePoints(m.stage as string, exact, outcome);
     if (p.joker && pts > 0) s.jokerWins++;
 
@@ -928,6 +921,11 @@ function StatsSection({ poolMemberIds }: { poolMemberIds?: string[] }) {
     }
     s.bestDay = best;
     s.bestDayDate = bestDate;
+  }
+  // Apply upset bonuses from DB function
+  const upsetMap = new Map((upsetBonuses ?? []).map(u => [u.user_id, u.upset_bonus]));
+  for (const [uid, s] of stats) {
+    s.upset = upsetMap.get(uid) ?? 0;
   }
 
   const rows = Array.from(stats.values()).sort((a, b) => b.exact - a.exact || b.outcome - a.outcome);
