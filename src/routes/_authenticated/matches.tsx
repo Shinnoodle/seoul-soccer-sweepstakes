@@ -72,7 +72,8 @@ function MatchesPage() {
       const el = sectionRefs.current[targetKey];
       if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 200);
-  }, [matches]);
+    }, [matches, allPicksBulk]);
+
 
 
   const { data: ownPicksBulk } = useQuery({
