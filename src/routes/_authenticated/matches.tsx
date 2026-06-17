@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { MatchCard } from "@/components/MatchCard";
 import { fmtDate, stageLabel, cn, seDayKey, sameSeDay } from "@/lib/utils";
@@ -22,6 +22,21 @@ function MatchesPage() {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [userId, setUserId] = useState<string | null | undefined>(undefined);
   const { selectedPool } = usePool();
+
+  const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
+
+// Auto-scroll to next upcoming match on load
+useEffect(() => {
+  if (!matches || matches.length === 0) return;
+  const now = new Date();
+  const nextMatch = matches.find(m => new Date(m.kickoff) > now);
+  const lastMatch = matches[matches.length - 1];
+  const targetKey = nextMatch ? seDayKey(nextMatch.kickoff) : lastMatch ? seDayKey(lastMatch.kickoff) : null;
+  if (!targetKey) return;
+  const el = sectionRefs.current[targetKey];
+  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+}, [matches]);
+
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setUserId(data.session?.user.id ?? null));
@@ -167,7 +182,7 @@ function MatchesPage() {
       )}
 
       {Object.entries(groups).map(([day, list]) => (
-        <section key={day} className="space-y-2">
+        <section key={day} ref={(el) => { sectionRefs.current[day] = el; }} className="space-y-2">
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
             {fmtDate(list![0].kickoff)}
           </h2>
