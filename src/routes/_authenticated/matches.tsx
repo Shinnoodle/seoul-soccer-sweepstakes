@@ -60,22 +60,6 @@ function MatchesPage() {
   }, [matches]);
   const lockedIdsKey = lockedIds.join(",");
 
-  // Auto-scroll to next upcoming match on load
-  useEffect(() => {
-    if (!matches || matches.length === 0) return;
-    const now = new Date();
-    const nextMatch = matches.find(m => new Date(m.kickoff) > now);
-    const lastMatch = matches[matches.length - 1];
-    const targetKey = nextMatch ? seDayKey(nextMatch.kickoff) : lastMatch ? seDayKey(lastMatch.kickoff) : null;
-    if (!targetKey) return;
-    setTimeout(() => {
-      const el = sectionRefs.current[targetKey];
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 200);
-    }, [matches, allPicksBulk]);
-
-
-
   const { data: ownPicksBulk } = useQuery({
     queryKey: ["own-picks-bulk", userId, matchIdsKey],
     enabled: !!userId && matchIds.length > 0,
@@ -103,6 +87,20 @@ function MatchesPage() {
     },
   });
 
+  // Auto-scroll to next upcoming match on load
+  useEffect(() => {
+    if (!matches || matches.length === 0) return;
+    const now = new Date();
+    const nextMatch = matches.find(m => new Date(m.kickoff) > now);
+    const lastMatch = matches[matches.length - 1];
+    const targetKey = nextMatch ? seDayKey(nextMatch.kickoff) : lastMatch ? seDayKey(lastMatch.kickoff) : null;
+    if (!targetKey) return;
+    setTimeout(() => {
+      const el = sectionRefs.current[targetKey];
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 200);
+    }, [matches, allPicksBulk]);
+  
   const matchDays = useMemo(() => {
     const set = new Set<string>();
     matches?.forEach(m => set.add(seDayKey(m.kickoff)));
