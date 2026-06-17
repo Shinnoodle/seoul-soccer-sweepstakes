@@ -22,21 +22,7 @@ function MatchesPage() {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [userId, setUserId] = useState<string | null | undefined>(undefined);
   const { selectedPool } = usePool();
-
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
-
-// Auto-scroll to next upcoming match on load
-useEffect(() => {
-  if (!matches || matches.length === 0) return;
-  const now = new Date();
-  const nextMatch = matches.find(m => new Date(m.kickoff) > now);
-  const lastMatch = matches[matches.length - 1];
-  const targetKey = nextMatch ? seDayKey(nextMatch.kickoff) : lastMatch ? seDayKey(lastMatch.kickoff) : null;
-  if (!targetKey) return;
-  const el = sectionRefs.current[targetKey];
-  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-}, [matches]);
-
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setUserId(data.session?.user.id ?? null));
@@ -74,7 +60,18 @@ useEffect(() => {
   }, [matches]);
   const lockedIdsKey = lockedIds.join(",");
 
-  // One query for the current user's own picks across all matches
+  // Auto-scroll to next upcoming match on load
+  useEffect(() => {
+    if (!matches || matches.length === 0) return;
+    const now = new Date();
+    const nextMatch = matches.find(m => new Date(m.kickoff) > now);
+    const lastMatch = matches[matches.length - 1];
+    const targetKey = nextMatch ? seDayKey(nextMatch.kickoff) : lastMatch ? seDayKey(lastMatch.kickoff) : null;
+    if (!targetKey) return;
+    const el = sectionRefs.current[targetKey];
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [matches]);
+
   const { data: ownPicksBulk } = useQuery({
     queryKey: ["own-picks-bulk", userId, matchIdsKey],
     enabled: !!userId && matchIds.length > 0,
@@ -89,7 +86,6 @@ useEffect(() => {
     },
   });
 
-  // One query for all picks across all locked matches
   const { data: allPicksBulk } = useQuery({
     queryKey: ["all-picks-bulk", lockedIdsKey],
     enabled: lockedIds.length > 0,
@@ -103,7 +99,6 @@ useEffect(() => {
     },
   });
 
-  // Set of days that have matches (for highlighting the calendar)
   const matchDays = useMemo(() => {
     const set = new Set<string>();
     matches?.forEach(m => set.add(seDayKey(m.kickoff)));
