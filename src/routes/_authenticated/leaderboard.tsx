@@ -82,6 +82,13 @@ const { data: upsetBonuses } = useQuery({
   },
 });
 
+const upsetByUser = useMemo(() => {
+  const map = new Map<string, number>();
+  for (const row of upsetBonuses ?? []) {
+    map.set(row.user_id, row.upset_bonus);
+  }
+  return map;
+}, [upsetBonuses]);
 
   
   const isFreePool = (selectedPool?.entry_fee ?? -1) === 0;
