@@ -68,9 +68,12 @@ function MatchesPage() {
     const lastMatch = matches[matches.length - 1];
     const targetKey = nextMatch ? seDayKey(nextMatch.kickoff) : lastMatch ? seDayKey(lastMatch.kickoff) : null;
     if (!targetKey) return;
-    const el = sectionRefs.current[targetKey];
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    setTimeout(() => {
+      const el = sectionRefs.current[targetKey];
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 200);
   }, [matches]);
+
 
   const { data: ownPicksBulk } = useQuery({
     queryKey: ["own-picks-bulk", userId, matchIdsKey],
