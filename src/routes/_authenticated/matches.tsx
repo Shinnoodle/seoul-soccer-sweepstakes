@@ -68,7 +68,7 @@ function MatchesPage() {
         .from("match_picks")
         .select("match_id,home_score,away_score,joker")
         .eq("user_id", userId!)
-        .in("match_id", matchIds);
+        .in("match_id", matchIds).limit(10000)
       if (error) throw error;
       return data;
     },
@@ -81,7 +81,7 @@ function MatchesPage() {
       const { data, error } = await supabase
         .from("match_picks")
         .select("match_id,user_id,home_score,away_score,joker")
-        .in("match_id", lockedIds);
+        .in("match_id", lockedIds).limit(10000)
       if (error) throw error;
       return data;
     },
