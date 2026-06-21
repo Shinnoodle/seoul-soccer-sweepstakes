@@ -74,19 +74,22 @@ function MatchesPage() {
     },
   });
 
-  const { data: allPicksBulk } = useQuery({
-    queryKey: ["all-picks-bulk", lockedIdsKey],
-    enabled: lockedIds.length > 0,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("match_picks")
-        .select("match_id,user_id,home_score,away_score,joker")
-        .in("match_id", lockedIds).limit(10000)
-      if (error) throw error;
-      return data;
-    },
-  });
+const { data: allPicksBulk } = useQuery({
+  queryKey: ["all-picks-bulk", lockedIdsKey, poolMemberIds?.join(",")],
+  enabled: lockedIds.length > 0 && !!poolMemberIds,
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from("match_picks")
+      .select("match_id,user_id,home_score,away_score,joker")
+      .in("match_id", lockedIds)
+      .in("user_id", poolMemberIds!)
+      .limit(10000);
+    if (error) throw error;
+    return data;
+  },
+});
 
+  
   // Auto-scroll to next upcoming match on load
   useEffect(() => {
     if (!matches || matches.length === 0) return;
