@@ -273,7 +273,8 @@ function PrizeLeaderSection({ approvedRows, poolMemberIds, entryFee }: { approve
       const { data, error } = await supabase
         .from("match_picks")
         .select("user_id,match_id,home_score,away_score,joker")
-        .in("match_id", matches!.map(m => m.id));
+        .in("match_id", matches!.map(m => m.id))
+.limit(10000)
       if (error) throw error;
       return data;
     },
@@ -824,7 +825,8 @@ function StatsSection({ poolMemberIds, upsetBonuses }: { poolMemberIds?: string[
       const { data, error } = await supabase
         .from("match_picks")
         .select("user_id,match_id,home_score,away_score,joker")
-        .in("match_id", matches!.map(m => m.id));
+        .in("match_id", matches!.map(m => m.id))
+.limit(10000)
       if (error) throw error;
       return data;
     },
