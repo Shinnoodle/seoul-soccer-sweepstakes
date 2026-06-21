@@ -817,16 +817,19 @@ function StatsSection({ poolMemberIds, upsetBonuses }: { poolMemberIds?: string[
     },
   });
 
-  const { data: picks } = useQuery({
-    queryKey: ["stats-picks"],
+    const { data: picks } = useQuery({
+    queryKey: ["stats-picks", matches?.map(m => m.id).join(",")],
+    enabled: !!matches && matches.length > 0,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("match_picks")
-        .select("user_id,match_id,home_score,away_score,joker");
+        .select("user_id,match_id,home_score,away_score,joker")
+        .in("match_id", matches!.map(m => m.id));
       if (error) throw error;
       return data;
     },
   });
+
 
   const { data: profiles } = useQuery({
     queryKey: ["stats-profiles"],
