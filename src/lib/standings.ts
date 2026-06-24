@@ -1,5 +1,20 @@
 import { WC_GROUPS, TEAM_EN_TO_GROUP } from "./wcGroups";
 
+// DB may use official FIFA names that differ from our display names
+const TEAM_ALIASES: Record<string, string> = {
+  "Türkiye": "Turkey",
+  "Côte d'Ivoire": "Ivory Coast",
+  "IR Iran": "Iran",
+  "Korea Republic": "South Korea",
+  "Korea DPR": "North Korea",
+  "DR Congo": "DR Congo",
+  "Curacao": "Curaçao",
+};
+
+function normalize(name: string): string {
+  return TEAM_ALIASES[name] ?? name;
+}
+
 export type StandingRow = {
   team: string;
   played: number;
@@ -32,11 +47,13 @@ export function calculateGroupStandings(matches: Match[]): Map<string, StandingR
 
   for (const m of matches) {
     if (m.home_score === null || m.away_score === null) continue;
-    const group = TEAM_EN_TO_GROUP[m.home_team] ?? TEAM_EN_TO_GROUP[m.away_team];
+    const homeName = normalize(m.home_team);
+    const awayName = normalize(m.away_team);
+    const group = TEAM_EN_TO_GROUP[homeName] ?? TEAM_EN_TO_GROUP[awayName];
     if (!group) continue;
     const groupRows = rows.get(group)!;
-    const home = groupRows.get(m.home_team);
-    const away = groupRows.get(m.away_team);
+    const home = groupRows.get(homeName);
+    const away = groupRows.get(awayName);
     if (!home || !away) continue;
 
     home.played++; away.played++;
