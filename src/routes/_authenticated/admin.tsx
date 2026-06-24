@@ -482,7 +482,7 @@ function GroupActualsBlock() {
               className="flex-1 rounded-lg bg-input border border-border px-2 py-1 text-xs"
             >
               <option value="">–</option>
-              {g.teams.map(t => <option key={t} value={t}>{t}</option>)}
+              {g.teamsEn.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
           );
           return (

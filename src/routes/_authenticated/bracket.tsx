@@ -211,7 +211,6 @@ function GroupTable({ group }: { group: typeof WC_GROUPS[0] }) {
         </thead>
         <tbody>
           {sorted.map((r, i) => {
-            const sv = TEAM_EN_TO_SV[r.team] ?? r.team;
             const qualifies = i < 2;
             const thirdPlace = i === 2;
             return (
@@ -220,7 +219,7 @@ function GroupTable({ group }: { group: typeof WC_GROUPS[0] }) {
                 <td className="px-1 py-2">
                   <div className="flex items-center gap-1.5">
                     <TeamFlag name={r.team} />
-                    <span className="font-medium">{sv}</span>
+                    <span className="font-medium">{r.team}</span>
                   </div>
                 </td>
                 <td className="text-center px-1.5 py-2 text-muted-foreground">{r.played}</td>

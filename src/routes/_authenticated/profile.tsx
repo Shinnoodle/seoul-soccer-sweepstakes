@@ -369,12 +369,12 @@ function pickTeam(letter: string, team: string, pos: 1 | 2 | 3) {
             return (
               <div key={g.letter} className="rounded-xl border border-border bg-background/40 p-3 space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className={`text-xs font-bold uppercase tracking-wide ${g.color}`}>Grupp {g.letter}</p>
+                  <p className={`text-xs font-bold uppercase tracking-wide ${g.color}`}>Group {g.letter}</p>
                   <div className="flex gap-2 text-[10px] text-muted-foreground">
-                    <span>👑 1:a</span><span>2:a</span><span>3:a</span>
+                    <span>👑 1st</span><span>2nd</span><span>3rd</span>
                   </div>
                 </div>
-                {g.teams.map(t => {
+                {g.teamsEn.map(t => {
                   const isFirst = sel[1] === t;
                   const isSecond = sel[2] === t;
                   const isThird = sel[3] === t;
