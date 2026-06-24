@@ -103,6 +103,27 @@ const { data: allPicksBulk } = useQuery({
     }, 200);
     }, [matches, allPicksBulk]);
   
+  useEffect(() => {
+    if (poolMemberIds === undefined) {
+      console.log('[DEBUG] poolMemberIds: undefined (not loaded yet or no pool)');
+    } else {
+      const SVENALDO = 'f4241c8c-cd36-447c-a990-907ea84d0015';
+      const LINDA_S  = 'fcf06f85-1783-46ac-ac71-3b6541d3f9cc';
+      console.log('[DEBUG] poolMemberIds count:', poolMemberIds.length);
+      console.log('[DEBUG] svenaldo in poolMemberIds:', poolMemberIds.includes(SVENALDO));
+      console.log('[DEBUG] linda_s in poolMemberIds:', poolMemberIds.includes(LINDA_S));
+    }
+    if (allPicksBulk !== undefined) {
+      const SVENALDO = 'f4241c8c-cd36-447c-a990-907ea84d0015';
+      const LINDA_S  = 'fcf06f85-1783-46ac-ac71-3b6541d3f9cc';
+      const svenaldoPicks = allPicksBulk.filter(p => p.user_id === SVENALDO);
+      const lindaPicks = allPicksBulk.filter(p => p.user_id === LINDA_S);
+      console.log('[DEBUG] allPicksBulk total picks:', allPicksBulk.length);
+      console.log('[DEBUG] svenaldo picks in bulk:', svenaldoPicks.length);
+      console.log('[DEBUG] linda_s picks in bulk:', lindaPicks.length);
+    }
+  }, [poolMemberIds, allPicksBulk]);
+
   const matchDays = useMemo(() => {
     const set = new Set<string>();
     matches?.forEach(m => set.add(seDayKey(m.kickoff)));
@@ -190,12 +211,6 @@ const { data: allPicksBulk } = useQuery({
               ? (ownPicksBulk.find(p => p.match_id === m.id) ?? null)
               : undefined;
             const matchAllPicks = allPicksBulk?.filter(p => p.match_id === m.id);
-            if (m.id === 'ab5715de-c45e-4481-ad8b-d95862852d32') {
-              console.log('[DEBUG match1] poolMemberIds:', poolMemberIds?.length, poolMemberIds);
-              console.log('[DEBUG match1] allPicksBulk picks for this match:', matchAllPicks?.length);
-              console.log('[DEBUG match1] svenaldo in pool?', poolMemberIds?.includes('f4241c8c-cd36-447c-a990-907ea84d0015'));
-              console.log('[DEBUG match1] linda_s in pool?', poolMemberIds?.includes('fcf06f85-1783-46ac-ac71-3b6541d3f9cc'));
-            }
             const jokerCount = ownPicksBulk?.filter(p => p.joker).length;
             return (
               <MatchCard
