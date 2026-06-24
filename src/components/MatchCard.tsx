@@ -274,8 +274,7 @@ export function MatchCard({
 
           {allPicks && profiles && (() => {
             const knownPicks = allPicks.filter(p =>
-              profiles.some(pr => pr.id === p.user_id) &&
-              (!poolMemberIds || poolMemberIds.includes(p.user_id))
+              profiles.some(pr => pr.id === p.user_id)
             );
             return knownPicks.length > 0 && <AllPicksPanel picks={knownPicks} match={match} nameOf={nameOf} />;
           })()}
