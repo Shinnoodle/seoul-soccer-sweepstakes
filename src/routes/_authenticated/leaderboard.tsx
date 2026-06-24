@@ -99,7 +99,7 @@ const upsetByUser = useMemo(() => {
     .filter((r) =>
       r.user_id &&
       approvedSet.has(r.user_id) &&
-      (poolMembers === undefined || poolSet.has(r.user_id))
+      poolSet.has(r.user_id)
     )
     .map((r) => {
       const upset = upsetByUser.get(r.user_id!) ?? 0;
@@ -114,7 +114,7 @@ const upsetByUser = useMemo(() => {
 
   
   const unapproved = isFreePool ? [] : (allProfiles ?? [])
-    .filter((p) => !p.approved && (poolMembers === undefined || poolSet.has(p.id)));
+    .filter((p) => !p.approved && poolSet.has(p.id));
     
   // Delad placering (1224 style)
   const ranked = useMemo(() => {
