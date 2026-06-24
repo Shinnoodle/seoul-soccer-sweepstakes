@@ -3,6 +3,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { WC_GROUPS } from "@/lib/wcGroups";
+
+// Convert legacy Swedish team names stored in DB to English
+const SV_TO_EN: Record<string, string> = Object.fromEntries(
+  WC_GROUPS.flatMap(g => g.teams.map((sv, i) => [sv, g.teamsEn[i]]))
+);
 import { teamFlag, TeamFlag } from "@/lib/teamFlags";
 
 
@@ -99,7 +104,7 @@ function ProfilePage() {
     const map: Record<string, { 1?: string; 2?: string; 3?: string }> = {};
     for (const r of r16Rows) {
       map[r.group_letter] ??= {};
-      map[r.group_letter][r.position as 1 | 2 | 3] = r.team_name;
+      map[r.group_letter][r.position as 1 | 2 | 3] = SV_TO_EN[r.team_name] ?? r.team_name;
     }
     setR16(map);
   }, [r16Rows]);
