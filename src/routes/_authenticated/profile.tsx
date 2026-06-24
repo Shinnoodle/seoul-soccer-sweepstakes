@@ -10,6 +10,14 @@ export const Route = createFileRoute("/_authenticated/profile")({
   component: ProfilePage,
 });
 
+const VALID_TEAMS = new Set(
+  WC_GROUPS.flatMap(g => [...g.teams, ...g.teamsEn]).map(t => t.toLowerCase())
+);
+
+function isValidTeam(name: string) {
+  return !name.trim() || VALID_TEAMS.has(name.trim().toLowerCase());
+}
+
 function ProfilePage() {
   const qc = useQueryClient();
   const [userId, setUserId] = useState<string | null>(null);
@@ -299,21 +307,31 @@ function pickTeam(letter: string, team: string, pos: 1 | 2 | 3) {
             </div>
             <form onSubmit={saveLt} className="space-y-2">
               {[
-                ["champion","🏆 VM-vinnare"],
-                ["runner_up","🥈 Finalist (förlorare i finalen)"],
-                ["semi1","🥉 Semifinalist 1 (åker ut i semi)"],
-                ["semi2","🥉 Semifinalist 2 (åker ut i semi)"],
-                ["top_scorer","⚽ Skyttekung"],
-              ].map(([key, label]) => (
-                <input key={key}
-                  required maxLength={50}
-                  placeholder={label}
-                  value={lt[key as keyof typeof lt]}
-                  onChange={(e) => setLt(prev => ({ ...prev, [key]: e.target.value }))}
-                  className="w-full rounded-xl bg-input border border-border px-3 py-2 outline-none focus:border-primary"
-                />
-              ))}
-              <button type="submit" disabled={savingLt}
+                ["champion","🏆 VM-vinnare", true],
+                ["runner_up","🥈 Finalist (förlorare i finalen)", true],
+                ["semi1","🥉 Semifinalist 1 (åker ut i semi)", true],
+                ["semi2","🥉 Semifinalist 2 (åker ut i semi)", true],
+                ["top_scorer","⚽ Skyttekung", false],
+              ].map(([key, label, isTeam]) => {
+                const val = lt[key as keyof typeof lt];
+                const invalid = isTeam && val.trim() !== "" && !isValidTeam(val);
+                return (
+                  <div key={key} className="space-y-0.5">
+                    <input
+                      required maxLength={50}
+                      placeholder={label as string}
+                      value={val}
+                      onChange={(e) => setLt(prev => ({ ...prev, [key]: e.target.value }))}
+                      className={`w-full rounded-xl bg-input border px-3 py-2 outline-none focus:border-primary ${invalid ? "border-destructive" : "border-border"}`}
+                    />
+                    {invalid && (
+                      <p className="text-xs text-destructive px-1">Laget är inte med i VM</p>
+                    )}
+                  </div>
+                );
+              })}
+              <button type="submit"
+                disabled={savingLt}
                 className="w-full rounded-xl bg-primary text-primary-foreground font-semibold py-2.5 disabled:opacity-50">
                 {savingLt ? "Sparar..." : longterm ? "Uppdatera" : "Spara"}
               </button>
