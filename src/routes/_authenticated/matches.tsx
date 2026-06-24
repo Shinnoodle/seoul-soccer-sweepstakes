@@ -190,6 +190,12 @@ const { data: allPicksBulk } = useQuery({
               ? (ownPicksBulk.find(p => p.match_id === m.id) ?? null)
               : undefined;
             const matchAllPicks = allPicksBulk?.filter(p => p.match_id === m.id);
+            if (m.id === 'ab5715de-c45e-4481-ad8b-d95862852d32') {
+              console.log('[DEBUG match1] poolMemberIds:', poolMemberIds?.length, poolMemberIds);
+              console.log('[DEBUG match1] allPicksBulk picks for this match:', matchAllPicks?.length);
+              console.log('[DEBUG match1] svenaldo in pool?', poolMemberIds?.includes('f4241c8c-cd36-447c-a990-907ea84d0015'));
+              console.log('[DEBUG match1] linda_s in pool?', poolMemberIds?.includes('fcf06f85-1783-46ac-ac71-3b6541d3f9cc'));
+            }
             const jokerCount = ownPicksBulk?.filter(p => p.joker).length;
             return (
               <MatchCard
