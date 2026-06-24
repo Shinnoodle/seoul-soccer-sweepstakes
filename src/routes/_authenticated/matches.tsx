@@ -75,16 +75,25 @@ function MatchesPage() {
   });
 
 const { data: allPicksBulk } = useQuery({
-  queryKey: ["all-picks-bulk", lockedIdsKey],
-  enabled: lockedIds.length > 0,
+  queryKey: ["all-picks-bulk", lockedIdsKey, poolMemberIds?.join(",")],
+  enabled: lockedIds.length > 0 && !!poolMemberIds,
   queryFn: async () => {
-    const { data, error } = await supabase
-      .from("match_picks")
-      .select("match_id,user_id,home_score,away_score,joker")
-      .in("match_id", lockedIds)
-      .limit(10000);
-    if (error) throw error;
-    return data;
+    const results: { match_id: string; user_id: string; home_score: number; away_score: number; joker: boolean }[] = [];
+    let from = 0;
+    const PAGE = 1000;
+    while (true) {
+      const { data, error } = await supabase
+        .from("match_picks")
+        .select("match_id,user_id,home_score,away_score,joker")
+        .in("match_id", lockedIds)
+        .in("user_id", poolMemberIds!)
+        .range(from, from + PAGE - 1);
+      if (error) throw error;
+      results.push(...(data ?? []));
+      if (!data || data.length < PAGE) break;
+      from += PAGE;
+    }
+    return results;
   },
 });
 
@@ -103,27 +112,6 @@ const { data: allPicksBulk } = useQuery({
     }, 200);
     }, [matches, allPicksBulk]);
   
-  useEffect(() => {
-    if (poolMemberIds === undefined) {
-      console.log('[DEBUG] poolMemberIds: undefined (not loaded yet or no pool)');
-    } else {
-      const SVENALDO = 'f4241c8c-cd36-447c-a990-907ea84d0015';
-      const LINDA_S  = 'fcf06f85-1783-46ac-ac71-3b6541d3f9cc';
-      console.log('[DEBUG] poolMemberIds count:', poolMemberIds.length);
-      console.log('[DEBUG] svenaldo in poolMemberIds:', poolMemberIds.includes(SVENALDO));
-      console.log('[DEBUG] linda_s in poolMemberIds:', poolMemberIds.includes(LINDA_S));
-    }
-    if (allPicksBulk !== undefined) {
-      const SVENALDO = 'f4241c8c-cd36-447c-a990-907ea84d0015';
-      const LINDA_S  = 'fcf06f85-1783-46ac-ac71-3b6541d3f9cc';
-      const svenaldoPicks = allPicksBulk.filter(p => p.user_id === SVENALDO);
-      const lindaPicks = allPicksBulk.filter(p => p.user_id === LINDA_S);
-      console.log('[DEBUG] allPicksBulk total picks:', allPicksBulk.length);
-      console.log('[DEBUG] svenaldo picks in bulk:', svenaldoPicks.length);
-      console.log('[DEBUG] linda_s picks in bulk:', lindaPicks.length);
-    }
-  }, [poolMemberIds, allPicksBulk]);
-
   const matchDays = useMemo(() => {
     const set = new Set<string>();
     matches?.forEach(m => set.add(seDayKey(m.kickoff)));
