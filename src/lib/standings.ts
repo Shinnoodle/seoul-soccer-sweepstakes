@@ -1,18 +1,22 @@
 import { WC_GROUPS, TEAM_EN_TO_GROUP } from "./wcGroups";
 
-// DB may use official FIFA names that differ from our display names
-const TEAM_ALIASES: Record<string, string> = {
+// Map all Swedish team names → English, built from WC_GROUPS
+const SV_TO_EN: Record<string, string> = Object.fromEntries(
+  WC_GROUPS.flatMap(g => g.teams.map((sv, i) => [sv, g.teamsEn[i]]))
+);
+
+// Extra FIFA/alternate spellings not covered by Swedish names
+const EXTRA_ALIASES: Record<string, string> = {
   "Türkiye": "Turkey",
   "Côte d'Ivoire": "Ivory Coast",
+  "Cote d'Ivoire": "Ivory Coast",
   "IR Iran": "Iran",
   "Korea Republic": "South Korea",
-  "Korea DPR": "North Korea",
-  "DR Congo": "DR Congo",
   "Curacao": "Curaçao",
 };
 
 function normalize(name: string): string {
-  return TEAM_ALIASES[name] ?? name;
+  return SV_TO_EN[name] ?? EXTRA_ALIASES[name] ?? name;
 }
 
 export type StandingRow = {
