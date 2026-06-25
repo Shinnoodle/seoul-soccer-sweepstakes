@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { stageLabel, fmtDate, fmtTime } from "@/lib/utils";
 import { WC_GROUPS } from "@/lib/wcGroups";
+import { calculateGroupStandings } from "@/lib/standings";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
@@ -435,6 +436,47 @@ function GroupActualsBlock() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
+  const { data: groupMatches } = useQuery({
+    queryKey: ["admin-group-matches"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("matches").select("home_team,away_team,home_score,away_score,finished")
+        .eq("stage", "group");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const standings = calculateGroupStandings(groupMatches ?? []);
+
+  function autofillGroup(letter: string) {
+    const sorted = standings.get(letter);
+    if (!sorted) return;
+    setState(prev => ({
+      ...prev,
+      [letter]: {
+        pos1: sorted[0]?.team ?? "",
+        pos2: sorted[1]?.team ?? "",
+        pos3: sorted[2]?.team ?? "",
+        advances: prev[letter]?.advances ?? false,
+      },
+    }));
+  }
+
+  function autofillAll() {
+    const map: Record<string, GroupState> = {};
+    for (const g of WC_GROUPS) {
+      const sorted = standings.get(g.letter);
+      map[g.letter] = {
+        pos1: sorted?.[0]?.team ?? state[g.letter]?.pos1 ?? "",
+        pos2: sorted?.[1]?.team ?? state[g.letter]?.pos2 ?? "",
+        pos3: sorted?.[2]?.team ?? state[g.letter]?.pos3 ?? "",
+        advances: state[g.letter]?.advances ?? false,
+      };
+    }
+    setState(map);
+  }
+
   useEffect(() => {
     supabase.from("group_actuals").select("*").then(({ data }) => {
       const map: Record<string, GroupState> = {};
@@ -468,13 +510,20 @@ function GroupActualsBlock() {
 
   return (
     <section className="rounded-2xl bg-card border border-border p-4 space-y-3">
-      <h2 className="font-semibold">Grupputgångar (sextondelstips)</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="font-semibold">Grupputgångar (sextondelstips)</h2>
+        <button onClick={autofillAll} className="text-xs text-primary font-semibold hover:underline">
+          Fyll från tabell (alla)
+        </button>
+      </div>
       <p className="text-xs text-muted-foreground">
         Sätt verkliga placeringar per grupp efter gruppspelet. Kryssa "vidare" för de 8 bästa 3:orna.
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {WC_GROUPS.map(g => {
           const s = state[g.letter] ?? { pos1: "", pos2: "", pos3: "", advances: false };
+          const grpStandings = standings.get(g.letter);
+          const hasMatches = (grpStandings?.[0]?.played ?? 0) > 0;
           const sel = (pos: "pos1" | "pos2" | "pos3") => (
             <select
               value={s[pos]}
@@ -487,7 +536,14 @@ function GroupActualsBlock() {
           );
           return (
             <div key={g.letter} className="rounded-xl border border-border p-2 space-y-1.5">
-              <p className={`text-xs font-bold uppercase tracking-wide ${g.color}`}>Grupp {g.letter}</p>
+              <div className="flex items-center justify-between">
+                <p className={`text-xs font-bold uppercase tracking-wide ${g.color}`}>Grupp {g.letter}</p>
+                {hasMatches && (
+                  <button onClick={() => autofillGroup(g.letter)} className="text-[10px] text-primary hover:underline">
+                    Fyll från tabell
+                  </button>
+                )}
+              </div>
               <div className="flex items-center gap-1.5">
                 <span className="text-xs w-5">👑</span>{sel("pos1")}
               </div>
