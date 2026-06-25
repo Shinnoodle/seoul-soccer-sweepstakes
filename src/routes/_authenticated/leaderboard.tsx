@@ -266,17 +266,26 @@ function PrizeLeaderSection({ approvedRows, poolMemberIds, entryFee }: { approve
     },
   });
 
-    const { data: picks } = useQuery({
-    queryKey: ["stats-picks", matches?.map(m => m.id).join(",")],
-    enabled: !!matches && matches.length > 0,
+  const { data: picks } = useQuery({
+    queryKey: ["stats-picks", matches?.map(m => m.id).join(","), poolMemberIds?.join(",")],
+    enabled: !!matches && matches.length > 0 && !!poolMemberIds,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("match_picks")
-        .select("user_id,match_id,home_score,away_score,joker")
-        .in("match_id", matches!.map(m => m.id))
-.limit(10000)
-      if (error) throw error;
-      return data;
+      const results: { user_id: string; match_id: string; home_score: number; away_score: number; joker: boolean }[] = [];
+      let from = 0;
+      const PAGE = 1000;
+      while (true) {
+        const { data, error } = await supabase
+          .from("match_picks")
+          .select("user_id,match_id,home_score,away_score,joker")
+          .in("match_id", matches!.map(m => m.id))
+          .in("user_id", poolMemberIds!)
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        results.push(...(data ?? []));
+        if (!data || data.length < PAGE) break;
+        from += PAGE;
+      }
+      return results;
     },
   });
 
@@ -818,20 +827,28 @@ function StatsSection({ poolMemberIds, upsetBonuses }: { poolMemberIds?: string[
     },
   });
 
-      const { data: picks } = useQuery({
-  queryKey: ["stats-picks", matches?.map(m => m.id).join(","), poolMemberIds?.join(",")],
-  enabled: !!matches && matches.length > 0 && !!poolMemberIds,
-  queryFn: async () => {
-    const { data, error } = await supabase
-      .from("match_picks")
-      .select("user_id,match_id,home_score,away_score,joker")
-      .in("match_id", matches!.map(m => m.id))
-      .in("user_id", poolMemberIds!)
-      .limit(10000);
-    if (error) throw error;
-    return data;
-  },
-});
+  const { data: picks } = useQuery({
+    queryKey: ["stats-picks", matches?.map(m => m.id).join(","), poolMemberIds?.join(",")],
+    enabled: !!matches && matches.length > 0 && !!poolMemberIds,
+    queryFn: async () => {
+      const results: { user_id: string; match_id: string; home_score: number; away_score: number; joker: boolean }[] = [];
+      let from = 0;
+      const PAGE = 1000;
+      while (true) {
+        const { data, error } = await supabase
+          .from("match_picks")
+          .select("user_id,match_id,home_score,away_score,joker")
+          .in("match_id", matches!.map(m => m.id))
+          .in("user_id", poolMemberIds!)
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        results.push(...(data ?? []));
+        if (!data || data.length < PAGE) break;
+        from += PAGE;
+      }
+      return results;
+    },
+  });
 
 
 
