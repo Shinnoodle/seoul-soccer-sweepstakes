@@ -50,15 +50,22 @@ function LoginPage() {
   const [passwordUpdated, setPasswordUpdated] = useState(false);
 
   useEffect(() => {
-    // Listen for PASSWORD_RECOVERY event from Supabase reset link
+    const isRecovery = window.location.hash.includes("type=recovery");
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
         setMode("new-password");
+      } else if (event === "SIGNED_IN" && !isRecovery) {
+        navigate({ to: "/today" });
       }
     });
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/today" });
-    });
+
+    if (!isRecovery) {
+      supabase.auth.getSession().then(({ data }) => {
+        if (data.session) navigate({ to: "/today" });
+      });
+    }
+
     return () => subscription.unsubscribe();
   }, [navigate]);
 
