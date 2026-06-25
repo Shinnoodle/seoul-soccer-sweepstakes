@@ -42,16 +42,41 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [mode, setMode] = useState<"login" | "signup" | "reset">("login");
+  const [mode, setMode] = useState<"login" | "signup" | "reset" | "new-password">("login");
+  const [newPassword, setNewPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  const [passwordUpdated, setPasswordUpdated] = useState(false);
 
   useEffect(() => {
+    // Listen for PASSWORD_RECOVERY event from Supabase reset link
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setMode("new-password");
+      }
+    });
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) navigate({ to: "/today" });
     });
+    return () => subscription.unsubscribe();
   }, [navigate]);
+
+  async function submitNewPassword(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      setPasswordUpdated(true);
+      setTimeout(() => navigate({ to: "/today" }), 2000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Något gick fel");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function submitReset(e: React.FormEvent) {
     e.preventDefault();
@@ -109,11 +134,31 @@ function LoginPage() {
           <h1 className="text-2xl font-bold">Sweepstakes</h1>
           <p className="text-sm text-muted-foreground">VM tips 2026</p>
           <p className="text-sm text-muted-foreground mt-1">
-            {mode === "signup" ? "Skapa konto" : mode === "reset" ? "Återställ lösenord" : "Logga in"}
+            {mode === "signup" ? "Skapa konto" : mode === "reset" ? "Återställ lösenord" : mode === "new-password" ? "Välj nytt lösenord" : "Logga in"}
           </p>
         </div>
 
-        {mode === "reset" ? (
+        {mode === "new-password" ? (
+          passwordUpdated ? (
+            <p className="text-center text-sm text-success">Lösenord uppdaterat! Skickar vidare...</p>
+          ) : (
+            <form onSubmit={submitNewPassword} className="space-y-3">
+              <input
+                type="password" required minLength={6}
+                autoComplete="new-password"
+                placeholder="Nytt lösenord (min 6 tecken)"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full rounded-xl bg-input border border-border px-4 py-3 text-base outline-none focus:border-primary"
+              />
+              {error && <p className="text-sm text-destructive">{error}</p>}
+              <button type="submit" disabled={loading}
+                className="w-full rounded-xl bg-primary text-primary-foreground font-semibold py-3 disabled:opacity-50">
+                {loading ? "Sparar..." : "Spara nytt lösenord"}
+              </button>
+            </form>
+          )
+        ) : mode === "reset" ? (
           resetSent ? (
             <div className="text-center space-y-3">
               <p className="text-sm text-success">Återställningslänk skickad! Kolla din e-post.</p>
