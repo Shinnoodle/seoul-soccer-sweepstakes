@@ -239,26 +239,41 @@ function GroupTable({ group }: { group: typeof WC_GROUPS[0] }) {
 }
 
 function BracketPage() {
+  const standings = useGroupStandings();
+
+  function slot(label: string): SlotProps {
+    const m = label.match(/^([12])([A-L])$/);
+    if (m) {
+      const pos = parseInt(m[1]) - 1;
+      const grp = standings.get(m[2]);
+      const team = grp?.[pos];
+      if (team && team.played > 0) {
+        return { label: team.team, sub: `${m[1]}:a Grupp ${m[2]}` };
+      }
+    }
+    return { label };
+  }
+
   const r16Left = [
-    { top: { label: "1E" }, bottom: { label: "3 ABCDF" } },
-    { top: { label: "1I" }, bottom: { label: "3 CDFGH" } },
-    { top: { label: "2A" }, bottom: { label: "2B" } },
-    { top: { label: "1F" }, bottom: { label: "2C" } },
-    { top: { label: "2K" }, bottom: { label: "2L" } },
-    { top: { label: "1H" }, bottom: { label: "2J" } },
-    { top: { label: "1D" }, bottom: { label: "3 BEFIJ" } },
-    { top: { label: "1G" }, bottom: { label: "3 AEHIJ" } },
+    { top: slot("1E"), bottom: { label: "3 ABCDF" } },
+    { top: slot("1I"), bottom: { label: "3 CDFGH" } },
+    { top: slot("2A"), bottom: slot("2B") },
+    { top: slot("1F"), bottom: slot("2C") },
+    { top: slot("2K"), bottom: slot("2L") },
+    { top: slot("1H"), bottom: slot("2J") },
+    { top: slot("1D"), bottom: { label: "3 BEFIJ" } },
+    { top: slot("1G"), bottom: { label: "3 AEHIJ" } },
   ];
 
   const r16Right = [
-    { top: { label: "1C" }, bottom: { label: "2F" } },
-    { top: { label: "2E" }, bottom: { label: "2I" } },
-    { top: { label: "1A" }, bottom: { label: "3 CEFHI" } },
-    { top: { label: "1L" }, bottom: { label: "3 EHIJK" } },
-    { top: { label: "1J" }, bottom: { label: "2H" } },
-    { top: { label: "2D" }, bottom: { label: "2G" } },
-    { top: { label: "1B" }, bottom: { label: "3 EFGIJ" } },
-    { top: { label: "1K" }, bottom: { label: "3 DEIJL" } },
+    { top: slot("1C"), bottom: slot("2F") },
+    { top: slot("2E"), bottom: slot("2I") },
+    { top: slot("1A"), bottom: { label: "3 CEFHI" } },
+    { top: slot("1L"), bottom: { label: "3 EHIJK" } },
+    { top: slot("1J"), bottom: slot("2H") },
+    { top: slot("2D"), bottom: slot("2G") },
+    { top: slot("1B"), bottom: { label: "3 EFGIJ" } },
+    { top: slot("1K"), bottom: { label: "3 DEIJL" } },
   ];
 
   const qfLeft = [
