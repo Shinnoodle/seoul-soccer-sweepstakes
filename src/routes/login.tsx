@@ -42,15 +42,33 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [mode, setMode] = useState<"login" | "signup" | "reset">("login");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) navigate({ to: "/today" });
     });
   }, [navigate]);
+
+  async function submitReset(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/login`,
+      });
+      if (error) throw error;
+      setResetSent(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Något gick fel");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -91,50 +109,84 @@ function LoginPage() {
           <h1 className="text-2xl font-bold">Sweepstakes</h1>
           <p className="text-sm text-muted-foreground">VM tips 2026</p>
           <p className="text-sm text-muted-foreground mt-1">
-            {mode === "signup" ? "Skapa konto" : "Logga in"}
+            {mode === "signup" ? "Skapa konto" : mode === "reset" ? "Återställ lösenord" : "Logga in"}
           </p>
         </div>
 
-        <form onSubmit={submit} className="space-y-3">
-          {mode === "signup" && (
-            <input
-              type="text" required minLength={2} maxLength={40}
-              placeholder="Namn (visas i leaderboard)"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              className="w-full rounded-xl bg-input border border-border px-4 py-3 text-base outline-none focus:border-primary"
-            />
-          )}
-          <input
-            type="email" required autoComplete="email"
-            placeholder="E-post"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-xl bg-input border border-border px-4 py-3 text-base outline-none focus:border-primary"
-          />
-          <input
-            type="password" required minLength={6}
-            autoComplete={mode === "signup" ? "new-password" : "current-password"}
-            placeholder="Lösenord (min 6 tecken)"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-xl bg-input border border-border px-4 py-3 text-base outline-none focus:border-primary"
-          />
-          {error && <p className="text-sm text-destructive">{error}</p>}
-          <button
-            type="submit" disabled={loading}
-            className="w-full rounded-xl bg-primary text-primary-foreground font-semibold py-3 disabled:opacity-50"
-          >
-            {loading ? "Laddar..." : (mode === "signup" ? "Skapa konto" : "Logga in")}
-          </button>
-        </form>
-
-        <button
-          onClick={() => { setMode(mode === "signup" ? "login" : "signup"); setError(null); }}
-          className="w-full mt-4 text-sm text-muted-foreground hover:text-foreground"
-        >
-          {mode === "signup" ? "Har du konto? Logga in" : "Inget konto? Skapa ett"}
-        </button>
+        {mode === "reset" ? (
+          resetSent ? (
+            <div className="text-center space-y-3">
+              <p className="text-sm text-success">Återställningslänk skickad! Kolla din e-post.</p>
+              <button onClick={() => { setMode("login"); setResetSent(false); }} className="text-sm text-primary hover:underline">
+                Tillbaka till inloggning
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={submitReset} className="space-y-3">
+              <input
+                type="email" required autoComplete="email"
+                placeholder="E-post"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-xl bg-input border border-border px-4 py-3 text-base outline-none focus:border-primary"
+              />
+              {error && <p className="text-sm text-destructive">{error}</p>}
+              <button type="submit" disabled={loading}
+                className="w-full rounded-xl bg-primary text-primary-foreground font-semibold py-3 disabled:opacity-50">
+                {loading ? "Skickar..." : "Skicka återställningslänk"}
+              </button>
+              <button type="button" onClick={() => { setMode("login"); setError(null); }}
+                className="w-full text-sm text-muted-foreground hover:text-foreground">
+                Tillbaka
+              </button>
+            </form>
+          )
+        ) : (
+          <>
+            <form onSubmit={submit} className="space-y-3">
+              {mode === "signup" && (
+                <input
+                  type="text" required minLength={2} maxLength={40}
+                  placeholder="Namn (visas i leaderboard)"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="w-full rounded-xl bg-input border border-border px-4 py-3 text-base outline-none focus:border-primary"
+                />
+              )}
+              <input
+                type="email" required autoComplete="email"
+                placeholder="E-post"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-xl bg-input border border-border px-4 py-3 text-base outline-none focus:border-primary"
+              />
+              <input
+                type="password" required minLength={6}
+                autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                placeholder="Lösenord (min 6 tecken)"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-xl bg-input border border-border px-4 py-3 text-base outline-none focus:border-primary"
+              />
+              {error && <p className="text-sm text-destructive">{error}</p>}
+              <button type="submit" disabled={loading}
+                className="w-full rounded-xl bg-primary text-primary-foreground font-semibold py-3 disabled:opacity-50">
+                {loading ? "Laddar..." : (mode === "signup" ? "Skapa konto" : "Logga in")}
+              </button>
+            </form>
+            {mode === "login" && (
+              <button onClick={() => { setMode("reset"); setError(null); }}
+                className="w-full mt-2 text-sm text-muted-foreground hover:text-foreground">
+                Glömt lösenordet?
+              </button>
+            )}
+            <button
+              onClick={() => { setMode(mode === "signup" ? "login" : "signup"); setError(null); }}
+              className="w-full mt-2 text-sm text-muted-foreground hover:text-foreground">
+              {mode === "signup" ? "Har du konto? Logga in" : "Inget konto? Skapa ett"}
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
