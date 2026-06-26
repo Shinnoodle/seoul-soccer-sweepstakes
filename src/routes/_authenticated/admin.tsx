@@ -579,14 +579,14 @@ function GroupActualsBlock() {
 }
 
 const R16_WILDCARD_SLOTS = [
-  { key: "3_ABCDF", label: "3 ABCDF" },
-  { key: "3_CDFGH", label: "3 CDFGH" },
-  { key: "3_BEFIJ", label: "3 BEFIJ" },
-  { key: "3_AEHIJ", label: "3 AEHIJ" },
-  { key: "3_CEFHI", label: "3 CEFHI" },
-  { key: "3_EHIJK", label: "3 EHIJK" },
-  { key: "3_EFGIJ", label: "3 EFGIJ" },
-  { key: "3_DEIJL", label: "3 DEIJL" },
+  { key: "3_ABCDF", label: "3 ABCDF", opponent: "1E" },
+  { key: "3_CDFGH", label: "3 CDFGH", opponent: "1I" },
+  { key: "3_BEFIJ", label: "3 BEFIJ", opponent: "1D" },
+  { key: "3_AEHIJ", label: "3 AEHIJ", opponent: "1G" },
+  { key: "3_CEFHI", label: "3 CEFHI", opponent: "1A" },
+  { key: "3_EHIJK", label: "3 EHIJK", opponent: "1L" },
+  { key: "3_EFGIJ", label: "3 EFGIJ", opponent: "1B" },
+  { key: "3_DEIJL", label: "3 DEIJL", opponent: "1K" },
 ];
 
 function R16SlotsBlock() {
@@ -636,7 +636,10 @@ function R16SlotsBlock() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {R16_WILDCARD_SLOTS.map(s => (
           <div key={s.key} className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground w-20 shrink-0">{s.label}</span>
+            <div className="shrink-0 w-32">
+              <p className="text-xs font-semibold">{s.opponent} vs</p>
+              <p className="text-[10px] text-muted-foreground">{s.label}</p>
+            </div>
             <select
               value={slots[s.key] ?? ""}
               onChange={e => setSlots(prev => ({ ...prev, [s.key]: e.target.value }))}
