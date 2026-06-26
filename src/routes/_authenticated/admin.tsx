@@ -594,17 +594,24 @@ function R16SlotsBlock() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  const { data: thirdPlaceTeams } = useQuery({
-    queryKey: ["group-actuals-thirds"],
+  const { data: groupActuals } = useQuery({
+    queryKey: ["group-actuals-all"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("group_actuals")
-        .select("team_name")
-        .eq("position", 3)
-        .eq("advances_as_third", true);
-      return (data ?? []).map(r => r.team_name);
+      const { data } = await supabase.from("group_actuals").select("group_letter,position,team_name,advances_as_third");
+      return data ?? [];
     },
   });
+
+  const thirdPlaceTeams = (groupActuals ?? [])
+    .filter(r => r.position === 3 && r.advances_as_third)
+    .map(r => r.team_name);
+
+  const winnerOf = (slot: string) => {
+    const m = slot.match(/^([12])([A-L])$/);
+    if (!m) return slot;
+    const team = (groupActuals ?? []).find(r => r.group_letter === m[2] && r.position === parseInt(m[1]));
+    return team?.team_name || slot;
+  };
 
   useEffect(() => {
     supabase.from("r16_slots").select("slot_key,team_name").then(({ data }) => {
@@ -637,7 +644,7 @@ function R16SlotsBlock() {
         {R16_WILDCARD_SLOTS.map(s => (
           <div key={s.key} className="flex items-center gap-2">
             <div className="shrink-0 w-32">
-              <p className="text-xs font-semibold">{s.opponent} vs</p>
+              <p className="text-xs font-semibold">{winnerOf(s.opponent)} vs</p>
               <p className="text-[10px] text-muted-foreground">{s.label}</p>
             </div>
             <select
