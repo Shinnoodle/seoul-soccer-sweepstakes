@@ -594,6 +594,17 @@ function R16SlotsBlock() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
+  const { data: groupMatches } = useQuery({
+    queryKey: ["admin-group-matches"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("matches").select("home_team,away_team,home_score,away_score,finished")
+        .eq("stage", "group");
+      return data ?? [];
+    },
+  });
+  const standings = calculateGroupStandings(groupMatches ?? []);
+
   const { data: groupActuals } = useQuery({
     queryKey: ["group-actuals-all"],
     queryFn: async () => {
