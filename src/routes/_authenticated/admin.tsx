@@ -609,8 +609,14 @@ function R16SlotsBlock() {
   const winnerOf = (slot: string) => {
     const m = slot.match(/^([12])([A-L])$/);
     if (!m) return slot;
-    const team = (groupActuals ?? []).find(r => r.group_letter === m[2] && r.position === parseInt(m[1]));
-    return team?.team_name || slot;
+    const pos = parseInt(m[1]);
+    const grp = m[2];
+    // Try group_actuals first, then fall back to calculated standings
+    const fromActuals = (groupActuals ?? []).find(r => r.group_letter === grp && r.position === pos);
+    if (fromActuals?.team_name) return fromActuals.team_name;
+    const fromStandings = standings.get(grp)?.[pos - 1];
+    if (fromStandings?.played > 0) return fromStandings.team;
+    return slot;
   };
 
   useEffect(() => {
