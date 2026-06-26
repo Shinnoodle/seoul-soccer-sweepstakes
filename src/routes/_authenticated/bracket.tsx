@@ -241,6 +241,15 @@ function GroupTable({ group }: { group: typeof WC_GROUPS[0] }) {
 function BracketPage() {
   const standings = useGroupStandings();
 
+  const { data: r16Slots } = useQuery({
+    queryKey: ["r16-slots"],
+    queryFn: async () => {
+      const { data } = await supabase.from("r16_slots").select("slot_key,team_name");
+      return Object.fromEntries((data ?? []).map(r => [r.slot_key, r.team_name]));
+    },
+    refetchInterval: 60000,
+  });
+
   function slot(label: string): SlotProps {
     const m = label.match(/^([12])([A-L])$/);
     if (m) {
@@ -250,6 +259,11 @@ function BracketPage() {
       if (team && team.played > 0) {
         return { label: team.team, sub: `${m[1]}:a Grupp ${m[2]}` };
       }
+    }
+    // 3rd place wildcard
+    const key = label.replace("3 ", "3_");
+    if (r16Slots?.[key]) {
+      return { label: r16Slots[key], sub: label };
     }
     return { label };
   }

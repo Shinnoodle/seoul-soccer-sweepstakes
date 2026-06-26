@@ -46,6 +46,7 @@ function AdminPage() {
       <PoolsBlock />
       <SettingsBlock onSaved={() => qc.invalidateQueries({ queryKey: ["settings"] })} />
       <GroupActualsBlock />
+      <R16SlotsBlock />
       <div className="space-y-3">
         {matches?.map(m => (
           <AdminMatchRow key={m.id} m={m} onSaved={() => qc.invalidateQueries({ queryKey: ["admin-matches"] })} />
@@ -571,6 +572,87 @@ function GroupActualsBlock() {
         className="w-full rounded-xl bg-primary text-primary-foreground font-semibold py-2 disabled:opacity-50"
       >
         {saving ? "Sparar..." : "Spara grupputgångar"}
+      </button>
+      {msg && <p className="text-xs text-muted-foreground">{msg}</p>}
+    </section>
+  );
+}
+
+const R16_WILDCARD_SLOTS = [
+  { key: "3_ABCDF", label: "3 ABCDF" },
+  { key: "3_CDFGH", label: "3 CDFGH" },
+  { key: "3_BEFIJ", label: "3 BEFIJ" },
+  { key: "3_AEHIJ", label: "3 AEHIJ" },
+  { key: "3_CEFHI", label: "3 CEFHI" },
+  { key: "3_EHIJK", label: "3 EHIJK" },
+  { key: "3_EFGIJ", label: "3 EFGIJ" },
+  { key: "3_DEIJL", label: "3 DEIJL" },
+];
+
+function R16SlotsBlock() {
+  const [slots, setSlots] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const { data: thirdPlaceTeams } = useQuery({
+    queryKey: ["group-actuals-thirds"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("group_actuals")
+        .select("team_name")
+        .eq("position", 3)
+        .eq("advances_as_third", true);
+      return (data ?? []).map(r => r.team_name);
+    },
+  });
+
+  useEffect(() => {
+    supabase.from("r16_slots").select("slot_key,team_name").then(({ data }) => {
+      const map: Record<string, string> = {};
+      for (const r of data ?? []) map[r.slot_key] = r.team_name;
+      setSlots(map);
+    });
+  }, []);
+
+  async function save() {
+    setSaving(true); setMsg(null);
+    const rows = R16_WILDCARD_SLOTS
+      .filter(s => slots[s.key])
+      .map(s => ({ slot_key: s.key, team_name: slots[s.key] }));
+    const { error } = await supabase
+      .from("r16_slots")
+      .upsert(rows, { onConflict: "slot_key" });
+    setSaving(false);
+    if (error) setMsg(error.message);
+    else setMsg("Sparat!");
+  }
+
+  return (
+    <section className="rounded-2xl bg-card border border-border p-4 space-y-3">
+      <h2 className="font-semibold">R16 — 3:e-plats wildcards</h2>
+      <p className="text-xs text-muted-foreground">
+        Tilldela de 8 bästa 3:orna till rätt R16-slot baserat på FIFAs placeringsschema.
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {R16_WILDCARD_SLOTS.map(s => (
+          <div key={s.key} className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground w-20 shrink-0">{s.label}</span>
+            <select
+              value={slots[s.key] ?? ""}
+              onChange={e => setSlots(prev => ({ ...prev, [s.key]: e.target.value }))}
+              className="flex-1 rounded-lg bg-input border border-border px-2 py-1 text-xs"
+            >
+              <option value="">–</option>
+              {(thirdPlaceTeams ?? []).map(t => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
+        ))}
+      </div>
+      <button onClick={save} disabled={saving}
+        className="w-full rounded-xl bg-primary text-primary-foreground font-semibold py-2 disabled:opacity-50">
+        {saving ? "Sparar..." : "Spara R16 wildcards"}
       </button>
       {msg && <p className="text-xs text-muted-foreground">{msg}</p>}
     </section>
