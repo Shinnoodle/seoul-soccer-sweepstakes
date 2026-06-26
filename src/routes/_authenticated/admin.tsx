@@ -47,6 +47,7 @@ function AdminPage() {
       <SettingsBlock onSaved={() => qc.invalidateQueries({ queryKey: ["settings"] })} />
       <GroupActualsBlock />
       <R16SlotsBlock />
+      <FillR16Block onSaved={() => qc.invalidateQueries({ queryKey: ["admin-matches"] })} />
       <div className="space-y-3">
         {matches?.map(m => (
           <AdminMatchRow key={m.id} m={m} onSaved={() => qc.invalidateQueries({ queryKey: ["admin-matches"] })} />
@@ -680,6 +681,80 @@ function R16SlotsBlock() {
       <button onClick={save} disabled={saving}
         className="w-full rounded-xl bg-primary text-primary-foreground font-semibold py-2 disabled:opacity-50">
         {saving ? "Sparar..." : "Spara R16 wildcards"}
+      </button>
+      {msg && <p className="text-xs text-muted-foreground">{msg}</p>}
+    </section>
+  );
+}
+
+// R16 matchup order (matches DB match_number order for stage="r16")
+const R16_MATCHUPS = [
+  { home: "1E", away: "3_ABCDF" }, { home: "1I", away: "3_CDFGH" },
+  { home: "2A", away: "2B" },      { home: "1F", away: "2C" },
+  { home: "2K", away: "2L" },      { home: "1H", away: "2J" },
+  { home: "1D", away: "3_BEFIJ" }, { home: "1G", away: "3_AEHIJ" },
+  { home: "1C", away: "2F" },      { home: "2E", away: "2I" },
+  { home: "1A", away: "3_CEFHI" }, { home: "1L", away: "3_EHIJK" },
+  { home: "1J", away: "2H" },      { home: "2D", away: "2G" },
+  { home: "1B", away: "3_EFGIJ" }, { home: "1K", away: "3_DEIJL" },
+];
+
+function FillR16Block({ onSaved }: { onSaved: () => void }) {
+  const [filling, setFilling] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  async function fill() {
+    setFilling(true); setMsg(null);
+    try {
+      const [{ data: r16Matches }, { data: actuals }, { data: groupMatchData }, { data: slots }] = await Promise.all([
+        supabase.from("matches").select("id,match_number").eq("stage", "r16").order("match_number"),
+        supabase.from("group_actuals").select("group_letter,position,team_name"),
+        supabase.from("matches").select("home_team,away_team,home_score,away_score,finished").eq("stage", "group"),
+        supabase.from("r16_slots").select("slot_key,team_name"),
+      ]);
+
+      const standings = calculateGroupStandings(groupMatchData ?? []);
+      const actualsMap = new Map((actuals ?? []).map(r => [`${r.group_letter}_${r.position}`, r.team_name]));
+      const slotsMap = new Map((slots ?? []).map(r => [r.slot_key, r.team_name]));
+
+      function resolve(slot: string): string {
+        const m = slot.match(/^([12])([A-L])$/);
+        if (m) {
+          return actualsMap.get(`${m[2]}_${m[1]}`)
+            ?? standings.get(m[2])?.[parseInt(m[1]) - 1]?.team
+            ?? slot;
+        }
+        return slotsMap.get(slot) ?? slot;
+      }
+
+      const updates = (r16Matches ?? []).map((match, i) => {
+        const mu = R16_MATCHUPS[i];
+        if (!mu) return null;
+        return supabase.from("matches").update({
+          home_team: resolve(mu.home),
+          away_team: resolve(mu.away),
+        }).eq("id", match.id);
+      }).filter(Boolean);
+
+      await Promise.all(updates);
+      setMsg("R16-lagnamn ifyllda!");
+      onSaved();
+    } catch (e) {
+      setMsg("Fel: " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setFilling(false);
+    }
+  }
+
+  return (
+    <section className="rounded-2xl bg-card border border-border p-4 space-y-2">
+      <h2 className="font-semibold">R16 — Fyll lagnamn i matcher</h2>
+      <p className="text-xs text-muted-foreground">
+        Hämtar 1:or och 2:or från grupptabeller + wildcards från R16-slots och skriver in i R16-matcherna.
+      </p>
+      <button onClick={fill} disabled={filling}
+        className="w-full rounded-xl bg-primary text-primary-foreground font-semibold py-2 disabled:opacity-50">
+        {filling ? "Fyller i..." : "Fyll R16-lagnamn automatiskt"}
       </button>
       {msg && <p className="text-xs text-muted-foreground">{msg}</p>}
     </section>
