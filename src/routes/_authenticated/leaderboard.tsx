@@ -930,7 +930,7 @@ function StatsSection({ poolMemberIds, upsetBonuses }: { poolMemberIds?: string[
     }
 
     const pts = stagePoints(m.stage as string, exact, outcome);
-    if (p.joker && pts > 0) s.jokerWins++;
+    if (p.joker) s.jokerWins++;
 
     const dateKey = new Date(m.kickoff).toISOString().slice(0, 10);
     const userDays = dayPoints.get(p.user_id) ?? new Map<string, number>();
