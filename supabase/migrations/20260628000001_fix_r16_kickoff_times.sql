@@ -3,7 +3,7 @@
 
 UPDATE matches SET kickoff = '2026-06-29 20:30:00+00' WHERE match_number = 73; -- GER vs PAR
 UPDATE matches SET kickoff = '2026-06-30 21:00:00+00' WHERE match_number = 74; -- FRA vs SWE
-UPDATE matches SET kickoff = '2026-06-29 19:00:00+00' WHERE match_number = 75; -- RSA vs CAN
+UPDATE matches SET kickoff = '2026-06-28 19:00:00+00' WHERE match_number = 75; -- RSA vs CAN
 UPDATE matches SET kickoff = '2026-06-30 01:00:00+00' WHERE match_number = 76; -- NED vs MAR
 UPDATE matches SET kickoff = '2026-07-02 23:00:00+00' WHERE match_number = 77; -- POR vs CRO
 UPDATE matches SET kickoff = '2026-07-02 19:00:00+00' WHERE match_number = 78; -- ESP vs AUT
