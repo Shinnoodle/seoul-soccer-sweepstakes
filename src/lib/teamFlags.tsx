@@ -140,6 +140,16 @@ const FLAGS: Record<string, string> = {
   "ungern": "🇭🇺",
   "venezuela": "🇻🇪",
   "tbd": "🏳️",
+  // ISO alpha-3 codes used in some DB entries
+  "dza": "🇩🇿",
+  "civ": "🇨🇮",
+  "cod": "🇨🇩",
+  "cpv": "🇨🇻",
+  "kor": "🇰🇷",
+  "ksa": "🇸🇦",
+  "irn": "🇮🇷",
+  "irq": "🇮🇶",
+  "uru": "🇺🇾",
 };
 
 export function teamFlag(name: string | null | undefined): string {

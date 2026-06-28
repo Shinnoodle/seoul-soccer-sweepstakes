@@ -45,6 +45,8 @@ const ABBR: Record<string, string> = {
   "Argentina": "ARG", "Österrike": "AUT", "Algeriet": "ALG", "Jordanien": "JOR",
   "Portugal": "POR", "Colombia": "COL", "Uzbekistan": "UZB", "DR Kongo": "COD",
   "England": "ENG", "Kroatien": "CRO", "Ghana": "GHA", "Panama": "PAN",
+  // ISO alpha-3 fallbacks (used when DB stores ISO codes instead of Swedish names)
+  "DZA": "ALG", "CIV": "CIV", "COD": "COD", "CPV": "CPV",
 };
 
 function teamAbbr(name: string): string {
