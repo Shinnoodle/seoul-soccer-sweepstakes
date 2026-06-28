@@ -1,171 +1,227 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { WC_GROUPS, TEAM_EN_TO_SV } from "@/lib/wcGroups";
+import { WC_GROUPS } from "@/lib/wcGroups";
 import { calculateGroupStandings } from "@/lib/standings";
-import { TeamFlag } from "@/lib/teamFlags";
+import { teamFlag, TeamFlag } from "@/lib/teamFlags";
+import { seDayKey } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/_authenticated/bracket")({
   component: BracketPage,
 });
 
-type Team = { name: string; flag: string };
-type SlotProps = { label: string; sub?: string };
+const SE_TZ = "Europe/Stockholm";
+const SLOT = 92; // px: vertical height per R16 slot in bracket grid
 
-function Slot({ label, sub }: SlotProps) {
+// ── Date helper ───────────────────────────────────────────────────────────────
+
+function fmtBracketDate(iso: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  const matchDay = seDayKey(iso);
+  const todayDay = seDayKey(now.toISOString());
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowDay = seDayKey(tomorrow.toISOString());
+  const time = d.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit", timeZone: SE_TZ });
+  if (matchDay === todayDay) return `I dag · ${time}`;
+  if (matchDay === tomorrowDay) return `I morgon · ${time}`;
+  return d.toLocaleDateString("sv-SE", { day: "numeric", month: "long", timeZone: SE_TZ }) + " · " + time;
+}
+
+// ── Team abbreviations ────────────────────────────────────────────────────────
+
+const ABBR: Record<string, string> = {
+  "Mexiko": "MEX", "Sydafrika": "RSA", "Sydkorea": "KOR", "Tjeckien": "CZE",
+  "Kanada": "CAN", "Bosnien": "BIH", "Qatar": "QAT", "Schweiz": "SUI",
+  "Brasilien": "BRA", "Marocko": "MAR", "Haiti": "HAI", "Skottland": "SCO",
+  "USA": "USA", "Paraguay": "PAR", "Australien": "AUS", "Turkiet": "TUR",
+  "Tyskland": "GER", "Curaçao": "CUW", "Elfenbenskusten": "CIV", "Ecuador": "ECU",
+  "Nederländerna": "NED", "Japan": "JPN", "Sverige": "SWE", "Tunisien": "TUN",
+  "Belgien": "BEL", "Egypten": "EGY", "Iran": "IRN", "Nya Zeeland": "NZL",
+  "Spanien": "ESP", "Kap Verde": "CPV", "Saudiarabien": "KSA", "Uruguay": "URU",
+  "Frankrike": "FRA", "Senegal": "SEN", "Irak": "IRQ", "Norge": "NOR",
+  "Argentina": "ARG", "Österrike": "AUT", "Algeriet": "ALG", "Jordanien": "JOR",
+  "Portugal": "POR", "Colombia": "COL", "Uzbekistan": "UZB", "DR Kongo": "COD",
+  "England": "ENG", "Kroatien": "CRO", "Ghana": "GHA", "Panama": "PAN",
+};
+
+function teamAbbr(name: string): string {
+  if (!name || name === "TBD") return "TBD";
+  return ABBR[name] ?? (name.length <= 4 ? name : name.slice(0, 3).toUpperCase());
+}
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+type KO = {
+  match_number: number;
+  stage: string;
+  kickoff: string;
+  home_team: string;
+  away_team: string;
+  home_score: number | null;
+  away_score: number | null;
+  finished: boolean;
+};
+
+// ── Match card ────────────────────────────────────────────────────────────────
+
+function TeamRow({ name, score, finished }: { name: string; score: number | null; finished: boolean }) {
+  const flag = teamFlag(name);
+  const isTbd = !name || name === "TBD";
   return (
-    <div className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs font-semibold leading-tight min-w-[90px]">
-      <span className="text-foreground">{label}</span>
-      {sub && <span className="block text-[10px] text-muted-foreground font-normal">{sub}</span>}
+    <div className="flex items-center gap-1.5 px-2.5 py-1.5">
+      <span className="text-base leading-none w-5 shrink-0 text-center">{isTbd ? "🏳️" : (flag || "🏳️")}</span>
+      <span className={`flex-1 text-[11px] font-bold tracking-wide ${isTbd ? "text-muted-foreground" : ""}`}>
+        {teamAbbr(name)}
+      </span>
+      <span className={`text-[11px] w-4 text-right font-bold ${finished ? "" : "text-muted-foreground"}`}>
+        {finished && score !== null ? score : "–"}
+      </span>
     </div>
   );
 }
 
-function Matchup({ top, bottom }: { top: SlotProps; bottom: SlotProps }) {
+function MatchCard({ match, dateStr }: { match?: KO | null; dateStr?: string | null }) {
+  const home = match?.home_team ?? "TBD";
+  const away = match?.away_team ?? "TBD";
+  const ds = match?.kickoff ? fmtBracketDate(match.kickoff) : (dateStr ?? null);
   return (
-    <div className="flex flex-col gap-0.5">
-      <Slot {...top} />
-      <Slot {...bottom} />
-    </div>
-  );
-}
-
-function Round({ title, matchups }: { title: string; matchups: { top: SlotProps; bottom: SlotProps }[] }) {
-  return (
-    <div className="flex flex-col gap-3">
-      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground text-center">{title}</p>
-      <div className="flex flex-col gap-4">
-        {matchups.map((m, i) => <Matchup key={i} {...m} />)}
+    <div className="flex flex-col" style={{ minWidth: 118 }}>
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <TeamRow name={home} score={match?.home_score ?? null} finished={match?.finished ?? false} />
+        <div className="h-px bg-border" />
+        <TeamRow name={away} score={match?.away_score ?? null} finished={match?.finished ?? false} />
       </div>
+      <p className={`text-[10px] text-center mt-1 leading-tight ${ds ? "text-muted-foreground" : "text-transparent select-none"}`}>
+        {ds ?? "–"}
+      </p>
     </div>
   );
 }
 
-function GroupCard({ name, teams, color }: { name: string; teams: Team[]; color: string }) {
+// ── Bracket column (grid-positioned) ─────────────────────────────────────────
+
+function BracketCol({
+  items,
+  slotsEach,
+  totalSlots,
+  label,
+}: {
+  items: (KO | null | undefined)[];
+  slotsEach: number;
+  totalSlots: number;
+  label?: string;
+}) {
   return (
-    <div className={`rounded-xl border border-border bg-card p-3 space-y-1.5 min-w-[140px]`}>
-      <p className={`text-[10px] font-bold uppercase tracking-wide ${color}`}>{name}</p>
-      {teams.map((t) => (
-        <div key={t.name} className="flex items-center gap-1.5 text-xs">
-          <span>{t.flag}</span>
-          <span className="text-foreground">{t.name}</span>
+    <div className="relative flex-shrink-0" style={{ height: totalSlots * SLOT }}>
+      {label && (
+        <p className="absolute -top-5 left-0 right-0 text-[9px] font-bold uppercase tracking-wide text-muted-foreground text-center whitespace-nowrap">
+          {label}
+        </p>
+      )}
+      {items.map((m, i) => (
+        <div
+          key={i}
+          className="absolute flex items-center justify-center"
+          style={{ top: i * slotsEach * SLOT, height: slotsEach * SLOT }}
+        >
+          <MatchCard match={m ?? null} />
         </div>
       ))}
     </div>
   );
 }
 
-const GROUPS: { name: string; color: string; teams: Team[] }[] = [
-  {
-    name: "Grupp A", color: "text-green-500",
-    teams: [
-      { name: "Mexiko", flag: "🇲🇽" },
-      { name: "Sydafrika", flag: "🇿🇦" },
-      { name: "Sydkorea", flag: "🇰🇷" },
-      { name: "Tjeckien", flag: "🇨🇿" },
-    ],
-  },
-  {
-    name: "Grupp B", color: "text-red-500",
-    teams: [
-      { name: "Kanada", flag: "🇨🇦" },
-      { name: "Bosnien", flag: "🇧🇦" },
-      { name: "Qatar", flag: "🇶🇦" },
-      { name: "Schweiz", flag: "🇨🇭" },
-    ],
-  },
-  {
-    name: "Grupp C", color: "text-yellow-500",
-    teams: [
-      { name: "Brasilien", flag: "🇧🇷" },
-      { name: "Marocko", flag: "🇲🇦" },
-      { name: "Haiti", flag: "🇭🇹" },
-      { name: "Skottland", flag: "🏴󠁧󠁢󠁳󠁣󠁴󠁿" },
-    ],
-  },
-  {
-    name: "Grupp D", color: "text-blue-500",
-    teams: [
-      { name: "USA", flag: "🇺🇸" },
-      { name: "Paraguay", flag: "🇵🇾" },
-      { name: "Australien", flag: "🇦🇺" },
-      { name: "Turkiet", flag: "🇹🇷" },
-    ],
-  },
-  {
-    name: "Grupp E", color: "text-purple-500",
-    teams: [
-      { name: "Tyskland", flag: "🇩🇪" },
-      { name: "Curaçao", flag: "🇨🇼" },
-      { name: "Elfenbenskusten", flag: "🇨🇮" },
-      { name: "Ecuador", flag: "🇪🇨" },
-    ],
-  },
-  {
-    name: "Grupp F", color: "text-orange-500",
-    teams: [
-      { name: "Nederländerna", flag: "🇳🇱" },
-      { name: "Japan", flag: "🇯🇵" },
-      { name: "Sverige", flag: "🇸🇪" },
-      { name: "Tunisien", flag: "🇹🇳" },
-    ],
-  },
-  {
-    name: "Grupp G", color: "text-pink-500",
-    teams: [
-      { name: "Belgien", flag: "🇧🇪" },
-      { name: "Egypten", flag: "🇪🇬" },
-      { name: "Iran", flag: "🇮🇷" },
-      { name: "Nya Zeeland", flag: "🇳🇿" },
-    ],
-  },
-  {
-    name: "Grupp H", color: "text-teal-500",
-    teams: [
-      { name: "Spanien", flag: "🇪🇸" },
-      { name: "Kap Verde", flag: "🇨🇻" },
-      { name: "Saudiarabien", flag: "🇸🇦" },
-      { name: "Uruguay", flag: "🇺🇾" },
-    ],
-  },
-  {
-    name: "Grupp I", color: "text-indigo-500",
-    teams: [
-      { name: "Frankrike", flag: "🇫🇷" },
-      { name: "Senegal", flag: "🇸🇳" },
-      { name: "Irak", flag: "🇮🇶" },
-      { name: "Norge", flag: "🇳🇴" },
-    ],
-  },
-  {
-    name: "Grupp J", color: "text-cyan-500",
-    teams: [
-      { name: "Argentina", flag: "🇦🇷" },
-      { name: "Österrike", flag: "🇦🇹" },
-      { name: "Algeriet", flag: "🇩🇿" },
-      { name: "Jordanien", flag: "🇯🇴" },
-    ],
-  },
-  {
-    name: "Grupp K", color: "text-emerald-500",
-    teams: [
-      { name: "Portugal", flag: "🇵🇹" },
-      { name: "Colombia", flag: "🇨🇴" },
-      { name: "Uzbekistan", flag: "🇺🇿" },
-      { name: "DR Kongo", flag: "🇨🇩" },
-    ],
-  },
-  {
-    name: "Grupp L", color: "text-rose-500",
-    teams: [
-      { name: "England", flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿" },
-      { name: "Kroatien", flag: "🇭🇷" },
-      { name: "Ghana", flag: "🇬🇭" },
-      { name: "Panama", flag: "🇵🇦" },
-    ],
-  },
-];
+function TbdCol({
+  dates,
+  slotsEach,
+  totalSlots,
+  label,
+}: {
+  dates: string[];
+  slotsEach: number;
+  totalSlots: number;
+  label?: string;
+}) {
+  return (
+    <div className="relative flex-shrink-0" style={{ height: totalSlots * SLOT }}>
+      {label && (
+        <p className="absolute -top-5 left-0 right-0 text-[9px] font-bold uppercase tracking-wide text-muted-foreground text-center whitespace-nowrap">
+          {label}
+        </p>
+      )}
+      {dates.map((d, i) => (
+        <div
+          key={i}
+          className="absolute flex items-center justify-center"
+          style={{ top: i * slotsEach * SLOT, height: slotsEach * SLOT }}
+        >
+          <MatchCard dateStr={fmtBracketDate(d)} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Bracket connectors ────────────────────────────────────────────────────────
+
+function Connectors({
+  count,
+  slotsPerGroup,
+  totalSlots,
+}: {
+  count: number;
+  slotsPerGroup: number;
+  totalSlots: number;
+}) {
+  return (
+    <div className="relative flex-shrink-0 w-4" style={{ height: totalSlots * SLOT }}>
+      {Array.from({ length: count }).map((_, i) => {
+        const groupTop = i * slotsPerGroup * SLOT;
+        const groupH = slotsPerGroup * SLOT;
+        const q = groupH / 4;
+        const mid = groupTop + groupH / 2;
+        return (
+          <div key={i}>
+            <div className="absolute bg-border" style={{ right: 0, top: groupTop + q, width: 1, height: groupH / 2 }} />
+            <div className="absolute bg-border" style={{ top: mid, left: 0, right: 0, height: 1 }} />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ConnectorsLeft({
+  count,
+  slotsPerGroup,
+  totalSlots,
+}: {
+  count: number;
+  slotsPerGroup: number;
+  totalSlots: number;
+}) {
+  return (
+    <div className="relative flex-shrink-0 w-4" style={{ height: totalSlots * SLOT }}>
+      {Array.from({ length: count }).map((_, i) => {
+        const groupTop = i * slotsPerGroup * SLOT;
+        const groupH = slotsPerGroup * SLOT;
+        const q = groupH / 4;
+        const mid = groupTop + groupH / 2;
+        return (
+          <div key={i}>
+            <div className="absolute bg-border" style={{ left: 0, top: groupTop + q, width: 1, height: groupH / 2 }} />
+            <div className="absolute bg-border" style={{ top: mid, left: 0, right: 0, height: 1 }} />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Group table (unchanged) ───────────────────────────────────────────────────
 
 function useGroupStandings() {
   const { data: matches } = useQuery({
@@ -186,7 +242,6 @@ function GroupTable({ group }: { group: typeof WC_GROUPS[0] }) {
   const standings = useGroupStandings();
   const sorted = standings.get(group.letter);
   if (!sorted) return null;
-
   return (
     <div className="rounded-2xl border border-border bg-card overflow-hidden">
       <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border">
@@ -238,81 +293,45 @@ function GroupTable({ group }: { group: typeof WC_GROUPS[0] }) {
   );
 }
 
-function BracketPage() {
-  const standings = useGroupStandings();
+// ── Main page ─────────────────────────────────────────────────────────────────
 
-  const { data: r16Slots } = useQuery({
-    queryKey: ["r16-slots"],
+// Approximate dates for SF-bridge (Kvartsfinal) rounds — not yet in DB
+const QF_BRIDGE_DATES = [
+  "2026-07-09T17:00:00Z", // Left QF-1 (9 juli 19:00 sv)
+  "2026-07-10T19:00:00Z", // Left QF-2 (10 juli 21:00 sv)
+  "2026-07-11T17:00:00Z", // Right QF-1 (11 juli 19:00 sv)
+  "2026-07-12T19:00:00Z", // Right QF-2 (12 juli 21:00 sv)
+];
+
+function BracketPage() {
+  const { data: koMatches } = useQuery({
+    queryKey: ["ko-matches"],
     queryFn: async () => {
-      const { data } = await supabase.from("r16_slots").select("slot_key,team_name");
-      return Object.fromEntries((data ?? []).map(r => [r.slot_key, r.team_name]));
+      const { data, error } = await supabase
+        .from("matches")
+        .select("match_number,stage,kickoff,home_team,away_team,home_score,away_score,finished")
+        .in("stage", ["r16", "qf", "sf", "third", "final"])
+        .order("match_number");
+      if (error) throw error;
+      return data as KO[];
     },
     refetchInterval: 60000,
   });
 
-  function slot(label: string): SlotProps {
-    const m = label.match(/^([12])([A-L])$/);
-    if (m) {
-      const pos = parseInt(m[1]) - 1;
-      const grp = standings.get(m[2]);
-      const team = grp?.[pos];
-      if (team && team.played > 0) {
-        return { label: team.team, sub: `${m[1]}:a Grupp ${m[2]}` };
-      }
-    }
-    // 3rd place wildcard
-    const key = label.replace("3 ", "3_");
-    if (r16Slots?.[key]) {
-      return { label: r16Slots[key], sub: label };
-    }
-    return { label };
-  }
+  const r16 = (koMatches ?? []).filter(m => m.stage === "r16");
+  const qf  = (koMatches ?? []).filter(m => m.stage === "qf");
+  const sf  = (koMatches ?? []).filter(m => m.stage === "sf");
+  const bronze = (koMatches ?? []).find(m => m.stage === "third") ?? null;
+  const final  = (koMatches ?? []).find(m => m.stage === "final") ?? null;
 
-  const r16Left = [
-    { top: slot("1E"), bottom: { label: "3 ABCDF" } },
-    { top: slot("1I"), bottom: { label: "3 CDFGH" } },
-    { top: slot("2A"), bottom: slot("2B") },
-    { top: slot("1F"), bottom: slot("2C") },
-    { top: slot("2K"), bottom: slot("2L") },
-    { top: slot("1H"), bottom: slot("2J") },
-    { top: slot("1D"), bottom: { label: "3 BEFIJ" } },
-    { top: slot("1G"), bottom: { label: "3 AEHIJ" } },
-  ];
+  const r16L = r16.slice(0, 8);
+  const r16R = r16.slice(8, 16);
+  const qfL  = qf.slice(0, 4);
+  const qfR  = qf.slice(4, 8);
+  const sf1  = sf[0] ?? null;
+  const sf2  = sf[1] ?? null;
 
-  const r16Right = [
-    { top: slot("1C"), bottom: slot("2F") },
-    { top: slot("2E"), bottom: slot("2I") },
-    { top: slot("1A"), bottom: { label: "3 CEFHI" } },
-    { top: slot("1L"), bottom: { label: "3 EHIJK" } },
-    { top: slot("1J"), bottom: slot("2H") },
-    { top: slot("2D"), bottom: slot("2G") },
-    { top: slot("1B"), bottom: { label: "3 EFGIJ" } },
-    { top: slot("1K"), bottom: { label: "3 DEIJL" } },
-  ];
-
-  const qfLeft = [
-    { top: { label: "Vinnare 16-del 1" }, bottom: { label: "Vinnare 16-del 2" } },
-    { top: { label: "Vinnare 16-del 3" }, bottom: { label: "Vinnare 16-del 4" } },
-    { top: { label: "Vinnare 16-del 5" }, bottom: { label: "Vinnare 16-del 6" } },
-    { top: { label: "Vinnare 16-del 7" }, bottom: { label: "Vinnare 16-del 8" } },
-  ];
-
-  const qfRight = [
-    { top: { label: "Vinnare 16-del 9" }, bottom: { label: "Vinnare 16-del 10" } },
-    { top: { label: "Vinnare 16-del 11" }, bottom: { label: "Vinnare 16-del 12" } },
-    { top: { label: "Vinnare 16-del 13" }, bottom: { label: "Vinnare 16-del 14" } },
-    { top: { label: "Vinnare 16-del 15" }, bottom: { label: "Vinnare 16-del 16" } },
-  ];
-
-  const sfLeft = [
-    { top: { label: "Vinnare Å1" }, bottom: { label: "Vinnare Å2" } },
-    { top: { label: "Vinnare Å3" }, bottom: { label: "Vinnare Å4" } },
-  ];
-
-  const sfRight = [
-    { top: { label: "Vinnare Å5" }, bottom: { label: "Vinnare Å6" } },
-    { top: { label: "Vinnare Å7" }, bottom: { label: "Vinnare Å8" } },
-  ];
+  const N = 8; // total slot rows
 
   return (
     <div className="p-4 space-y-4">
@@ -328,39 +347,51 @@ function BracketPage() {
           {WC_GROUPS.map(g => <GroupTable key={g.letter} group={g} />)}
         </TabsContent>
 
-        <TabsContent value="slutspel" className="mt-4">
-          <div className="overflow-x-auto pb-4">
-            <div className="flex gap-4 min-w-max">
-              <div className="flex flex-col gap-2">
-                <Round title="16-delsfinal (vänster)" matchups={r16Left} />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Round title="Åttondelsfinal" matchups={qfLeft} />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Round title="Kvartsfinal" matchups={sfLeft} />
-              </div>
-              <div className="flex flex-col items-center justify-center gap-2">
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground text-center">Semifinal & Final</p>
-                <Matchup top={{ label: "KV-vinnare 1" }} bottom={{ label: "KV-vinnare 2" }} />
-                <div className="mt-2 rounded-xl border-2 border-primary px-3 py-2 text-center">
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Världsmästare</p>
-                  <p className="text-sm font-bold text-primary">?</p>
+        <TabsContent value="slutspel" className="mt-6">
+          <div className="overflow-x-auto pb-6">
+            <div className="flex gap-0 items-start" style={{ paddingTop: 20 }}>
+
+              {/* ── LEFT SIDE ── */}
+              <BracketCol items={r16L} slotsEach={1} totalSlots={N} label="16-delsfinal" />
+              <Connectors count={4} slotsPerGroup={2} totalSlots={N} />
+              <BracketCol items={qfL} slotsEach={2} totalSlots={N} label="Åttondelsfinal" />
+              <Connectors count={2} slotsPerGroup={4} totalSlots={N} />
+              <TbdCol dates={QF_BRIDGE_DATES.slice(0, 2)} slotsEach={4} totalSlots={N} label="Kvartsfinal" />
+
+              {/* ── CENTER ── */}
+              <div
+                className="relative flex-shrink-0 flex items-center gap-3 px-4"
+                style={{ height: N * SLOT }}
+              >
+                {/* Left SF (mn 97) */}
+                <div className="flex flex-col items-center gap-1">
+                  <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground">Semifinal</p>
+                  <MatchCard match={sf1} />
                 </div>
-                <div className="mt-1 rounded-lg border border-border px-3 py-1.5 text-center">
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Bronsmatch</p>
-                  <p className="text-xs font-semibold">SF-förlorare</p>
+
+                {/* Final + Bronze */}
+                <div className="flex flex-col items-center gap-2">
+                  <span className="text-3xl leading-none">🏆</span>
+                  <p className="text-[9px] font-bold uppercase tracking-wide text-primary">Final</p>
+                  <MatchCard match={final} />
+                  <p className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground mt-2">Bronsmatch</p>
+                  <MatchCard match={bronze} />
+                </div>
+
+                {/* Right SF (mn 98) */}
+                <div className="flex flex-col items-center gap-1">
+                  <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground">Semifinal</p>
+                  <MatchCard match={sf2} />
                 </div>
               </div>
-              <div className="flex flex-col gap-2">
-                <Round title="Kvartsfinal" matchups={sfRight} />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Round title="Åttondelsfinal" matchups={qfRight} />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Round title="16-delsfinal (höger)" matchups={r16Right} />
-              </div>
+
+              {/* ── RIGHT SIDE (mirror) ── */}
+              <TbdCol dates={QF_BRIDGE_DATES.slice(2, 4)} slotsEach={4} totalSlots={N} label="Kvartsfinal" />
+              <ConnectorsLeft count={2} slotsPerGroup={4} totalSlots={N} />
+              <BracketCol items={qfR} slotsEach={2} totalSlots={N} label="Åttondelsfinal" />
+              <ConnectorsLeft count={4} slotsPerGroup={2} totalSlots={N} />
+              <BracketCol items={r16R} slotsEach={1} totalSlots={N} label="16-delsfinal" />
+
             </div>
           </div>
         </TabsContent>
