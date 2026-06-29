@@ -37,7 +37,8 @@ export function stageLabel(s: string) {
   switch (s) {
     case "group": return "Gruppspel";
     case "r16": return "16-delsfinal";
-    case "qf": return "Åttondelsfinal";
+    case "r8": return "Åttondelsfinal";
+    case "qf": return "Kvartsfinal";
     case "sf": return "Semifinal";
     case "third": return "Bronsmatch";
     case "final": return "Final";

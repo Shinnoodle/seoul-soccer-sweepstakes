@@ -13,7 +13,7 @@ export const Route = createFileRoute("/_authenticated/matches")({
   component: MatchesPage,
 });
 
-const STAGES = ["all","group","r16","qf","sf","third","final"] as const;
+const STAGES = ["all","group","r16","r8","qf","sf","third","final"] as const;
 
 function MatchesPage() {
   const qc = useQueryClient();
