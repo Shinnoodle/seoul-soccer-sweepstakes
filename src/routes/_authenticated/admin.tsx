@@ -48,6 +48,7 @@ function AdminPage() {
       <GroupActualsBlock />
       <R16SlotsBlock />
       <FillR16Block onSaved={() => qc.invalidateQueries({ queryKey: ["admin-matches"] })} />
+      <FillQFBlock onSaved={() => qc.invalidateQueries({ queryKey: ["admin-matches"] })} />
       <div className="space-y-3">
         {matches?.map(m => (
           <AdminMatchRow key={m.id} m={m} onSaved={() => qc.invalidateQueries({ queryKey: ["admin-matches"] })} />
@@ -681,6 +682,75 @@ function R16SlotsBlock() {
       <button onClick={save} disabled={saving}
         className="w-full rounded-xl bg-primary text-primary-foreground font-semibold py-2 disabled:opacity-50">
         {saving ? "Sparar..." : "Spara R16 wildcards"}
+      </button>
+      {msg && <p className="text-xs text-muted-foreground">{msg}</p>}
+    </section>
+  );
+}
+
+// QF matchups: winner of each pair of R16 matches feeds a QF slot
+const QF_MATCHUPS = [
+  { homeR16: 73, awayR16: 74, qfMn: 89 },
+  { homeR16: 75, awayR16: 76, qfMn: 90 },
+  { homeR16: 77, awayR16: 78, qfMn: 91 },
+  { homeR16: 79, awayR16: 80, qfMn: 92 },
+  { homeR16: 81, awayR16: 82, qfMn: 93 },
+  { homeR16: 83, awayR16: 84, qfMn: 94 },
+  { homeR16: 85, awayR16: 86, qfMn: 95 },
+  { homeR16: 87, awayR16: 88, qfMn: 96 },
+];
+
+function FillQFBlock({ onSaved }: { onSaved: () => void }) {
+  const [filling, setFilling] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  async function fill() {
+    setFilling(true); setMsg(null);
+    try {
+      const [{ data: r16Matches }, { data: qfMatches }] = await Promise.all([
+        supabase.from("matches").select("id,match_number,home_team,away_team,home_score,away_score,finished").eq("stage", "r16").order("match_number"),
+        supabase.from("matches").select("id,match_number").eq("stage", "qf").order("match_number"),
+      ]);
+
+      function winner(mn: number): string | null {
+        const m = (r16Matches ?? []).find(r => r.match_number === mn);
+        if (!m || !m.finished || m.home_score === null || m.away_score === null) return null;
+        if (m.home_score > m.away_score) return m.home_team;
+        if (m.away_score > m.home_score) return m.away_team;
+        return null; // draw (penalties) — fill manually
+      }
+
+      const updates = QF_MATCHUPS.flatMap(({ homeR16, awayR16, qfMn }) => {
+        const homeTeam = winner(homeR16);
+        const awayTeam = winner(awayR16);
+        if (!homeTeam && !awayTeam) return [];
+        const qfMatch = (qfMatches ?? []).find(q => q.match_number === qfMn);
+        if (!qfMatch) return [];
+        const payload: Record<string, string> = {};
+        if (homeTeam) payload.home_team = homeTeam;
+        if (awayTeam) payload.away_team = awayTeam;
+        return [supabase.from("matches").update(payload).eq("id", qfMatch.id)];
+      });
+
+      await Promise.all(updates);
+      setMsg(`Klart! ${updates.length} QF-matcher uppdaterade.`);
+      onSaved();
+    } catch (e) {
+      setMsg("Fel: " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setFilling(false);
+    }
+  }
+
+  return (
+    <section className="rounded-2xl bg-card border border-border p-4 space-y-2">
+      <h2 className="font-semibold">Åttondelsfinal — Fyll lagnamn i matcher</h2>
+      <p className="text-xs text-muted-foreground">
+        Hämtar vinnare från 16-delsfinaler och skriver in i åttondelsfinalerna. Fungerar ej för matcher avgjorda på straffar — fyll i manuellt nedan.
+      </p>
+      <button onClick={fill} disabled={filling}
+        className="w-full rounded-xl bg-primary text-primary-foreground font-semibold py-2 disabled:opacity-50">
+        {filling ? "Fyller i..." : "Fyll QF-lagnamn automatiskt"}
       </button>
       {msg && <p className="text-xs text-muted-foreground">{msg}</p>}
     </section>
