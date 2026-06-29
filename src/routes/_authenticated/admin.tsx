@@ -709,7 +709,7 @@ function FillQFBlock({ onSaved }: { onSaved: () => void }) {
     try {
       const [{ data: r16Matches }, { data: qfMatches }] = await Promise.all([
         supabase.from("matches").select("id,match_number,home_team,away_team,home_score,away_score,finished").eq("stage", "r16").order("match_number"),
-        supabase.from("matches").select("id,match_number").eq("stage", "qf").order("match_number"),
+        supabase.from("matches").select("id,match_number").eq("stage", "r8").order("match_number"),
       ]);
 
       function winner(mn: number): string | null {

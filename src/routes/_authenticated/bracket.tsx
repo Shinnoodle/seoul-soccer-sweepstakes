@@ -312,7 +312,7 @@ function BracketPage() {
       const { data, error } = await supabase
         .from("matches")
         .select("match_number,stage,kickoff,home_team,away_team,home_score,away_score,finished")
-        .in("stage", ["r16", "qf", "sf", "third", "final"])
+        .in("stage", ["r16", "r8", "qf", "sf", "third", "final"])
         .order("match_number");
       if (error) throw error;
       return data as KO[];
@@ -321,7 +321,7 @@ function BracketPage() {
   });
 
   const r16 = (koMatches ?? []).filter(m => m.stage === "r16");
-  const qf  = (koMatches ?? []).filter(m => m.stage === "qf");
+  const qf  = (koMatches ?? []).filter(m => m.stage === "r8");
   const sf  = (koMatches ?? []).filter(m => m.stage === "sf");
   const bronze = (koMatches ?? []).find(m => m.stage === "third") ?? null;
   const final  = (koMatches ?? []).find(m => m.stage === "final") ?? null;
