@@ -155,8 +155,8 @@ const upsetByUser = useMemo(() => {
       const upset = upsetByUser.get(r.user_id!) ?? 0;
       return {
         ...r,
-        match_points: (r.match_points ?? 0) + upset,
-        total_points: (r.total_points ?? 0) +   upset,
+        upset,
+        total_points: (r.total_points ?? 0) + upset,
       }
     })
         .sort((a, b) => (b.total_points ?? 0) - (a.total_points ?? 0));
@@ -258,7 +258,7 @@ const upsetByUser = useMemo(() => {
                       {isMe && <span className="ml-1.5 text-[10px] text-primary">(du)</span>}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      Match {r.match_points}p · Grupp {r.r16_points ?? 0}p · Turnering {r.longterm_points}p
+                      Match {r.match_points}p{r.upset ? ` · 💥 ${r.upset}p` : ""} · Grupp {r.r16_points ?? 0}p · Turnering {r.longterm_points}p
                     </div>
                   </div>
                   <div className="text-2xl font-bold text-primary">{r.total_points}</div>
@@ -419,7 +419,7 @@ function PrizeLeaderSection({ approvedRows, poolMemberIds, entryFee }: { approve
   const secondScore = totalSorted.find((r) => r.total_points !== firstScore)?.total_points ?? null;
   const secondPlace = secondScore !== null ? totalSorted.filter((r) => r.total_points === secondScore) : [];
 
-  const matchLeaders = topTied(approvedRows, (r) => r.match_points ?? 0);
+  const matchLeaders = topTied(approvedRows, (r) => (r.match_points ?? 0) + (r.upset ?? 0));
   const oracleLeaders = topTied(approvedRows, (r) => r.longterm_points ?? 0);
 
   const upsetPool = (profiles ?? [])
