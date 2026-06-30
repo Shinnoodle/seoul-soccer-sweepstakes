@@ -117,7 +117,7 @@ function BracketCol({
   label?: string;
 }) {
   return (
-    <div className="relative flex-shrink-0" style={{ height: totalSlots * SLOT }}>
+    <div className="relative flex-shrink-0" style={{ height: totalSlots * SLOT, width: 118 }}>
       {label && (
         <p className="absolute -top-5 left-0 right-0 text-[9px] font-bold uppercase tracking-wide text-muted-foreground text-center whitespace-nowrap">
           {label}
@@ -126,7 +126,7 @@ function BracketCol({
       {items.map((m, i) => (
         <div
           key={i}
-          className="absolute flex items-center justify-center"
+          className="absolute left-0 right-0 flex items-center justify-center"
           style={{ top: i * slotsEach * SLOT, height: slotsEach * SLOT }}
         >
           <MatchCard match={m ?? null} />
@@ -148,7 +148,7 @@ function TbdCol({
   label?: string;
 }) {
   return (
-    <div className="relative flex-shrink-0" style={{ height: totalSlots * SLOT }}>
+    <div className="relative flex-shrink-0" style={{ height: totalSlots * SLOT, width: 118 }}>
       {label && (
         <p className="absolute -top-5 left-0 right-0 text-[9px] font-bold uppercase tracking-wide text-muted-foreground text-center whitespace-nowrap">
           {label}
@@ -157,7 +157,7 @@ function TbdCol({
       {dates.map((d, i) => (
         <div
           key={i}
-          className="absolute flex items-center justify-center"
+          className="absolute left-0 right-0 flex items-center justify-center"
           style={{ top: i * slotsEach * SLOT, height: slotsEach * SLOT }}
         >
           <MatchCard dateStr={fmtBracketDate(d)} />
