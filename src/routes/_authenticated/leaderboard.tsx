@@ -69,18 +69,68 @@ const { selectedPool } = usePool();
     },
   });
     
-const { data: upsetBonuses } = useQuery({
-  queryKey: ["upset-bonus", selectedPool?.id],
-  enabled: !!selectedPool,
-  staleTime: 60000, // consider data fresh for 1 minute
-  refetchOnWindowFocus: true, // refetch when user switches back to tab
+const { data: upsMatches } = useQuery({
+  queryKey: ["upset-matches"],
   queryFn: async () => {
     const { data, error } = await supabase
-      .rpc("pool_upset_bonus", { p_pool_id: selectedPool!.id });
+      .from("matches")
+      .select("id,home_score,away_score")
+      .eq("finished", true);
     if (error) throw error;
-    return data as { user_id: string; upset_bonus: number }[];
+    return data;
   },
+  refetchInterval: 60000,
 });
+
+const upsMatchIds = useMemo(() => upsMatches?.map(m => m.id) ?? [], [upsMatches]);
+
+const { data: upsPicks } = useQuery({
+  queryKey: ["upset-picks", upsMatchIds.join(","), poolMembers?.join(",")],
+  enabled: upsMatchIds.length > 0 && !!poolMembers && poolMembers.length > 0,
+  queryFn: async () => {
+    const results: { user_id: string; match_id: string; home_score: number; away_score: number }[] = [];
+    let from = 0;
+    const PAGE = 1000;
+    while (true) {
+      const { data, error } = await supabase
+        .from("match_picks")
+        .select("user_id,match_id,home_score,away_score")
+        .in("match_id", upsMatchIds)
+        .in("user_id", poolMembers!)
+        .range(from, from + PAGE - 1);
+      if (error) throw error;
+      results.push(...(data ?? []));
+      if (!data || data.length < PAGE) break;
+      from += PAGE;
+    }
+    return results;
+  },
+  refetchInterval: 60000,
+});
+
+const upsetBonuses = useMemo((): { user_id: string; upset_bonus: number }[] | undefined => {
+  if (!upsMatches || !upsPicks || !poolMembers) return undefined;
+  const sign = (n: number) => (n > 0 ? 1 : n < 0 ? -1 : 0);
+  const matchById = new Map(upsMatches.map(m => [m.id, m]));
+  const picksPerMatch = new Map<string, typeof upsPicks>();
+  for (const p of upsPicks) {
+    const arr = picksPerMatch.get(p.match_id) ?? [];
+    arr.push(p);
+    picksPerMatch.set(p.match_id, arr);
+  }
+  const counts = new Map<string, number>();
+  for (const p of upsPicks) {
+    const m = matchById.get(p.match_id);
+    if (!m || m.home_score === null || m.away_score === null) continue;
+    const actual = sign(m.home_score - m.away_score);
+    if (sign(p.home_score - p.away_score) !== actual) continue;
+    const all = picksPerMatch.get(p.match_id) ?? [];
+    if (all.length >= 3 && all.filter(x => sign(x.home_score - x.away_score) === actual).length * 2 < all.length) {
+      counts.set(p.user_id, (counts.get(p.user_id) ?? 0) + 1);
+    }
+  }
+  return poolMembers.map(uid => ({ user_id: uid, upset_bonus: counts.get(uid) ?? 0 }));
+}, [upsMatches, upsPicks, poolMembers]);
 
 const upsetByUser = useMemo(() => {
   const map = new Map<string, number>();
