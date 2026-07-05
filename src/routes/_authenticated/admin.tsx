@@ -55,7 +55,7 @@ function AdminPage() {
         feederStage="r8"
         targetStage="qf"
         pairings={QF_BRACKET_PAIRINGS}
-        onSaved={() => qc.invalidateQueries({ queryKey: ["admin-matches"] })}
+        onSaved={() => { qc.invalidateQueries({ queryKey: ["admin-matches"] }); qc.invalidateQueries({ queryKey: ["ko-matches"] }); qc.invalidateQueries({ queryKey: ["bracket-feeder"] }); }}
       />
       <FillBracketRoundBlock
         roundLabel="Semifinal"
@@ -63,9 +63,9 @@ function AdminPage() {
         feederStage="qf"
         targetStage="sf"
         pairings={SF_BRACKET_PAIRINGS}
-        onSaved={() => qc.invalidateQueries({ queryKey: ["admin-matches"] })}
+        onSaved={() => { qc.invalidateQueries({ queryKey: ["admin-matches"] }); qc.invalidateQueries({ queryKey: ["ko-matches"] }); qc.invalidateQueries({ queryKey: ["bracket-feeder"] }); }}
       />
-      <FillFinalBlock onSaved={() => qc.invalidateQueries({ queryKey: ["admin-matches"] })} />
+      <FillFinalBlock onSaved={() => { qc.invalidateQueries({ queryKey: ["admin-matches"] }); qc.invalidateQueries({ queryKey: ["ko-matches"] }); }} />
       <div className="space-y-3">
         {matches?.map(m => (
           <AdminMatchRow key={m.id} m={m} onSaved={() => qc.invalidateQueries({ queryKey: ["admin-matches"] })} />
