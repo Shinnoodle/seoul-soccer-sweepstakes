@@ -48,7 +48,24 @@ function AdminPage() {
       <GroupActualsBlock />
       <R16SlotsBlock />
       <FillR16Block onSaved={() => qc.invalidateQueries({ queryKey: ["admin-matches"] })} />
-      <FillQFBlock onSaved={() => qc.invalidateQueries({ queryKey: ["admin-matches"] })} />
+      <FillR8Block onSaved={() => qc.invalidateQueries({ queryKey: ["admin-matches"] })} />
+      <FillBracketRoundBlock
+        roundLabel="Kvartsfinal"
+        description="Välj vinnarna från åttondelsfinalerna. Auto-ifyllt för klara matcher — justera manuellt vid straffar."
+        feederStage="r8"
+        targetStage="qf"
+        pairings={QF_BRACKET_PAIRINGS}
+        onSaved={() => qc.invalidateQueries({ queryKey: ["admin-matches"] })}
+      />
+      <FillBracketRoundBlock
+        roundLabel="Semifinal"
+        description="Välj vinnarna från kvartsfinalerna."
+        feederStage="qf"
+        targetStage="sf"
+        pairings={SF_BRACKET_PAIRINGS}
+        onSaved={() => qc.invalidateQueries({ queryKey: ["admin-matches"] })}
+      />
+      <FillFinalBlock onSaved={() => qc.invalidateQueries({ queryKey: ["admin-matches"] })} />
       <div className="space-y-3">
         {matches?.map(m => (
           <AdminMatchRow key={m.id} m={m} onSaved={() => qc.invalidateQueries({ queryKey: ["admin-matches"] })} />
@@ -688,28 +705,41 @@ function R16SlotsBlock() {
   );
 }
 
-// QF matchups: winner of each pair of R16 matches feeds a QF slot
-const QF_MATCHUPS = [
-  { homeR16: 73, awayR16: 74, qfMn: 89 },
-  { homeR16: 75, awayR16: 76, qfMn: 90 },
-  { homeR16: 77, awayR16: 78, qfMn: 91 },
-  { homeR16: 79, awayR16: 80, qfMn: 92 },
-  { homeR16: 81, awayR16: 82, qfMn: 93 },
-  { homeR16: 83, awayR16: 84, qfMn: 94 },
-  { homeR16: 85, awayR16: 86, qfMn: 95 },
-  { homeR16: 87, awayR16: 88, qfMn: 96 },
+// Bracket pairings for each round
+const R8_MATCHUPS = [
+  { homeR16: 73, awayR16: 74, r8Mn: 89 },
+  { homeR16: 75, awayR16: 76, r8Mn: 90 },
+  { homeR16: 77, awayR16: 78, r8Mn: 91 },
+  { homeR16: 79, awayR16: 80, r8Mn: 92 },
+  { homeR16: 81, awayR16: 82, r8Mn: 93 },
+  { homeR16: 83, awayR16: 84, r8Mn: 94 },
+  { homeR16: 85, awayR16: 86, r8Mn: 95 },
+  { homeR16: 87, awayR16: 88, r8Mn: 96 },
 ];
 
-function FillQFBlock({ onSaved }: { onSaved: () => void }) {
+const QF_BRACKET_PAIRINGS = [
+  { homeFeederMn: 89, awayFeederMn: 90, targetMn: 101 },
+  { homeFeederMn: 91, awayFeederMn: 92, targetMn: 102 },
+  { homeFeederMn: 93, awayFeederMn: 94, targetMn: 103 },
+  { homeFeederMn: 95, awayFeederMn: 96, targetMn: 104 },
+];
+
+const SF_BRACKET_PAIRINGS = [
+  { homeFeederMn: 101, awayFeederMn: 102, targetMn: 97 },
+  { homeFeederMn: 103, awayFeederMn: 104, targetMn: 98 },
+];
+
+// Auto-fill Åttondelsfinal teams from R16 winners (button approach, kept for speed)
+function FillR8Block({ onSaved }: { onSaved: () => void }) {
   const [filling, setFilling] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
   async function fill() {
     setFilling(true); setMsg(null);
     try {
-      const [{ data: r16Matches }, { data: qfMatches }] = await Promise.all([
+      const [{ data: r16Matches }, { data: r8Matches }] = await Promise.all([
         supabase.from("matches").select("id,match_number,home_team,away_team,home_score,away_score,finished").eq("stage", "r16").order("match_number"),
-        supabase.from("matches").select("id,match_number").eq("stage", "r8").order("match_number"),
+        supabase.from("matches").select("id,match_number").eq("stage", "r8" as any).order("match_number"),
       ]);
 
       function winner(mn: number): string | null {
@@ -717,23 +747,23 @@ function FillQFBlock({ onSaved }: { onSaved: () => void }) {
         if (!m || !m.finished || m.home_score === null || m.away_score === null) return null;
         if (m.home_score > m.away_score) return m.home_team;
         if (m.away_score > m.home_score) return m.away_team;
-        return null; // draw (penalties) — fill manually
+        return null;
       }
 
-      const updates = QF_MATCHUPS.flatMap(({ homeR16, awayR16, qfMn }) => {
+      const updates = R8_MATCHUPS.flatMap(({ homeR16, awayR16, r8Mn }) => {
         const homeTeam = winner(homeR16);
         const awayTeam = winner(awayR16);
         if (!homeTeam && !awayTeam) return [];
-        const qfMatch = (qfMatches ?? []).find(q => q.match_number === qfMn);
-        if (!qfMatch) return [];
-        const payload: Record<string, string> = {};
+        const r8Match = (r8Matches ?? []).find(q => q.match_number === r8Mn);
+        if (!r8Match) return [];
+        const payload: { home_team?: string; away_team?: string } = {};
         if (homeTeam) payload.home_team = homeTeam;
         if (awayTeam) payload.away_team = awayTeam;
-        return [supabase.from("matches").update(payload).eq("id", qfMatch.id)];
+        return [supabase.from("matches").update(payload).eq("id", r8Match.id)];
       });
 
       await Promise.all(updates);
-      setMsg(`Klart! ${updates.length} QF-matcher uppdaterade.`);
+      setMsg(`Klart! ${updates.length} åttondelsfinaler uppdaterade.`);
       onSaved();
     } catch (e) {
       setMsg("Fel: " + (e instanceof Error ? e.message : String(e)));
@@ -744,13 +774,257 @@ function FillQFBlock({ onSaved }: { onSaved: () => void }) {
 
   return (
     <section className="rounded-2xl bg-card border border-border p-4 space-y-2">
-      <h2 className="font-semibold">Åttondelsfinal — Fyll lagnamn i matcher</h2>
+      <h2 className="font-semibold">Åttondelsfinal — Fyll lagnamn automatiskt</h2>
       <p className="text-xs text-muted-foreground">
-        Hämtar vinnare från 16-delsfinaler och skriver in i åttondelsfinalerna. Fungerar ej för matcher avgjorda på straffar — fyll i manuellt nedan.
+        Hämtar vinnare från 16-delsfinaler. Matcher avgjorda på straffar (lika efter 90 min) måste fyllas i nedan.
       </p>
       <button onClick={fill} disabled={filling}
         className="w-full rounded-xl bg-primary text-primary-foreground font-semibold py-2 disabled:opacity-50">
-        {filling ? "Fyller i..." : "Fyll QF-lagnamn automatiskt"}
+        {filling ? "Fyller i..." : "Fyll åttondelsfinallagnamn automatiskt"}
+      </button>
+      {msg && <p className="text-xs text-muted-foreground">{msg}</p>}
+    </section>
+  );
+}
+
+type BracketPairing = { homeFeederMn: number; awayFeederMn: number; targetMn: number };
+type FeederMatch = { id: string; match_number: number; home_team: string; away_team: string; home_score: number | null; away_score: number | null; finished: boolean };
+
+function FillBracketRoundBlock({
+  roundLabel,
+  description,
+  feederStage,
+  targetStage,
+  pairings,
+  onSaved,
+}: {
+  roundLabel: string;
+  description: string;
+  feederStage: string;
+  targetStage: string;
+  pairings: BracketPairing[];
+  onSaved: () => void;
+}) {
+  const [selections, setSelections] = useState<Record<number, { home: string; away: string }>>({});
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const { data: feederMatches } = useQuery({
+    queryKey: ["bracket-feeder", feederStage],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("matches")
+        .select("id,match_number,home_team,away_team,home_score,away_score,finished")
+        .eq("stage", feederStage as any)
+        .order("match_number");
+      return (data ?? []) as FeederMatch[];
+    },
+  });
+
+  const { data: targetMatches } = useQuery({
+    queryKey: ["bracket-target", targetStage],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("matches")
+        .select("id,match_number,home_team,away_team")
+        .eq("stage", targetStage as any)
+        .order("match_number");
+      return data ?? [];
+    },
+  });
+
+  useEffect(() => {
+    if (!feederMatches || !targetMatches) return;
+    setSelections(prev => {
+      const next = { ...prev };
+      for (const p of pairings) {
+        const existing = targetMatches.find(m => m.match_number === p.targetMn);
+        const homeFeed = feederMatches.find(m => m.match_number === p.homeFeederMn);
+        const awayFeed = feederMatches.find(m => m.match_number === p.awayFeederMn);
+        if (!next[p.targetMn]) {
+          next[p.targetMn] = {
+            home: (existing?.home_team && existing.home_team !== "TBD") ? existing.home_team : (autoWinner(homeFeed) ?? ""),
+            away: (existing?.away_team && existing.away_team !== "TBD") ? existing.away_team : (autoWinner(awayFeed) ?? ""),
+          };
+        }
+      }
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [feederMatches, targetMatches]);
+
+  function autoWinner(m: FeederMatch | undefined): string | null {
+    if (!m?.finished || m.home_score === null || m.away_score === null) return null;
+    if (m.home_score > m.away_score) return m.home_team;
+    if (m.away_score > m.home_score) return m.away_team;
+    return null;
+  }
+
+  async function save() {
+    setSaving(true); setMsg(null);
+    try {
+      const updates = pairings.flatMap(p => {
+        const sel = selections[p.targetMn];
+        const target = targetMatches?.find(m => m.match_number === p.targetMn);
+        if (!target || (!sel?.home && !sel?.away)) return [];
+        const payload: { home_team?: string; away_team?: string } = {};
+        if (sel.home) payload.home_team = sel.home;
+        if (sel.away) payload.away_team = sel.away;
+        return [supabase.from("matches").update(payload).eq("id", target.id)];
+      });
+      if (updates.length === 0) { setMsg("Inga ändringar att spara."); setSaving(false); return; }
+      await Promise.all(updates);
+      setMsg(`Klart! ${updates.length} matcher uppdaterade.`);
+      onSaved();
+    } catch (e) {
+      setMsg("Fel: " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="rounded-2xl bg-card border border-border p-4 space-y-3">
+      <h2 className="font-semibold">{roundLabel} — Välj lag som avancerar</h2>
+      <p className="text-xs text-muted-foreground">{description}</p>
+      <div className="space-y-2">
+        {pairings.map(p => {
+          const homeFeed = feederMatches?.find(m => m.match_number === p.homeFeederMn);
+          const awayFeed = feederMatches?.find(m => m.match_number === p.awayFeederMn);
+          const sel = selections[p.targetMn] ?? { home: "", away: "" };
+          const matchLabel = targetMatches?.find(m => m.match_number === p.targetMn)
+            ? `Match ${p.targetMn}` : `Match ${p.targetMn} (ej skapad)`;
+          return (
+            <div key={p.targetMn} className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground w-20 shrink-0">{matchLabel}</span>
+              <select
+                value={sel.home}
+                onChange={e => setSelections(prev => ({ ...prev, [p.targetMn]: { ...sel, home: e.target.value } }))}
+                className="flex-1 rounded-lg bg-input border border-border px-2 py-1.5 text-xs"
+              >
+                <option value="">– hemmalag –</option>
+                {homeFeed && homeFeed.home_team !== "TBD" && <option value={homeFeed.home_team}>{homeFeed.home_team}</option>}
+                {homeFeed && homeFeed.away_team !== "TBD" && <option value={homeFeed.away_team}>{homeFeed.away_team}</option>}
+              </select>
+              <span className="text-xs text-muted-foreground shrink-0">vs</span>
+              <select
+                value={sel.away}
+                onChange={e => setSelections(prev => ({ ...prev, [p.targetMn]: { ...sel, away: e.target.value } }))}
+                className="flex-1 rounded-lg bg-input border border-border px-2 py-1.5 text-xs"
+              >
+                <option value="">– bortalag –</option>
+                {awayFeed && awayFeed.home_team !== "TBD" && <option value={awayFeed.home_team}>{awayFeed.home_team}</option>}
+                {awayFeed && awayFeed.away_team !== "TBD" && <option value={awayFeed.away_team}>{awayFeed.away_team}</option>}
+              </select>
+            </div>
+          );
+        })}
+      </div>
+      <button onClick={save} disabled={saving}
+        className="w-full rounded-xl bg-primary text-primary-foreground font-semibold py-2 disabled:opacity-50">
+        {saving ? "Sparar..." : `Spara ${roundLabel.toLowerCase()}lagnamn`}
+      </button>
+      {msg && <p className="text-xs text-muted-foreground">{msg}</p>}
+    </section>
+  );
+}
+
+function FillFinalBlock({ onSaved }: { onSaved: () => void }) {
+  const [sf1Winner, setSf1Winner] = useState("");
+  const [sf2Winner, setSf2Winner] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const { data: sfMatches } = useQuery({
+    queryKey: ["bracket-feeder", "sf"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("matches")
+        .select("id,match_number,home_team,away_team,home_score,away_score,finished")
+        .eq("stage", "sf").order("match_number");
+      return (data ?? []) as FeederMatch[];
+    },
+  });
+
+  const { data: finalThird } = useQuery({
+    queryKey: ["bracket-target-final"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("matches")
+        .select("id,match_number,stage,home_team,away_team")
+        .in("stage", ["final", "third"] as any);
+      return data ?? [];
+    },
+  });
+
+  const sf1 = sfMatches?.find(m => m.match_number === 97);
+  const sf2 = sfMatches?.find(m => m.match_number === 98);
+
+  useEffect(() => {
+    if (!sf1 || !sf2) return;
+    const auto1 = autoWinner(sf1);
+    const auto2 = autoWinner(sf2);
+    if (auto1 && !sf1Winner) setSf1Winner(auto1);
+    if (auto2 && !sf2Winner) setSf2Winner(auto2);
+  }, [sf1, sf2]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function autoWinner(m: FeederMatch | undefined): string | null {
+    if (!m?.finished || m.home_score === null || m.away_score === null) return null;
+    if (m.home_score > m.away_score) return m.home_team;
+    if (m.away_score > m.home_score) return m.away_team;
+    return null;
+  }
+
+  function otherTeam(m: FeederMatch | undefined, winner: string): string {
+    if (!m) return "";
+    return winner === m.home_team ? m.away_team : m.home_team;
+  }
+
+  const sf1Loser = sf1Winner ? otherTeam(sf1, sf1Winner) : "";
+  const sf2Loser = sf2Winner ? otherTeam(sf2, sf2Winner) : "";
+
+  async function save() {
+    if (!sf1Winner || !sf2Winner) return;
+    setSaving(true); setMsg(null);
+    try {
+      const finalMatch = finalThird?.find(m => m.stage === "final");
+      const thirdMatch = finalThird?.find(m => m.stage === "third");
+      const updates = [];
+      if (finalMatch) updates.push(supabase.from("matches").update({ home_team: sf1Winner, away_team: sf2Winner }).eq("id", finalMatch.id));
+      if (thirdMatch && sf1Loser && sf2Loser) updates.push(supabase.from("matches").update({ home_team: sf1Loser, away_team: sf2Loser }).eq("id", thirdMatch.id));
+      await Promise.all(updates);
+      setMsg("Klart! Final och bronsmatch uppdaterade.");
+      onSaved();
+    } catch (e) {
+      setMsg("Fel: " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="rounded-2xl bg-card border border-border p-4 space-y-3">
+      <h2 className="font-semibold">Final + Bronsmatch — Välj vinnare</h2>
+      <p className="text-xs text-muted-foreground">Semifinalvinnarna går till finalen, förlorarna till bronsmatchen.</p>
+      <div className="space-y-2">
+        {[{ sf: sf1, label: "SF1 vinnare", winner: sf1Winner, setWinner: setSf1Winner, loser: sf1Loser },
+          { sf: sf2, label: "SF2 vinnare", winner: sf2Winner, setWinner: setSf2Winner, loser: sf2Loser }
+        ].map(({ sf, label, winner, setWinner, loser }) => (
+          <div key={label} className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground w-20 shrink-0">{label}</span>
+            <select value={winner} onChange={e => setWinner(e.target.value)}
+              className="flex-1 rounded-lg bg-input border border-border px-2 py-1.5 text-xs">
+              <option value="">– välj vinnare –</option>
+              {sf && sf.home_team !== "TBD" && <option value={sf.home_team}>{sf.home_team}</option>}
+              {sf && sf.away_team !== "TBD" && <option value={sf.away_team}>{sf.away_team}</option>}
+            </select>
+            {loser && <span className="text-[10px] text-muted-foreground shrink-0">→ brons: {loser}</span>}
+          </div>
+        ))}
+      </div>
+      <button onClick={save} disabled={saving || !sf1Winner || !sf2Winner}
+        className="w-full rounded-xl bg-primary text-primary-foreground font-semibold py-2 disabled:opacity-50">
+        {saving ? "Sparar..." : "Spara Final + Bronsmatch"}
       </button>
       {msg && <p className="text-xs text-muted-foreground">{msg}</p>}
     </section>

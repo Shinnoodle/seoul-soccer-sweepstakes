@@ -419,7 +419,7 @@ function PrizeLeaderSection({ approvedRows, poolMemberIds, entryFee }: { approve
   const secondScore = totalSorted.find((r) => r.total_points !== firstScore)?.total_points ?? null;
   const secondPlace = secondScore !== null ? totalSorted.filter((r) => r.total_points === secondScore) : [];
 
-  const matchLeaders = topTied(approvedRows, (r) => (r.match_points ?? 0) + (r.upset ?? 0));
+  const matchLeaders = topTied(approvedRows, (r) => r.match_points ?? 0);
   const oracleLeaders = topTied(approvedRows, (r) => r.longterm_points ?? 0);
 
   const upsetPool = (profiles ?? [])

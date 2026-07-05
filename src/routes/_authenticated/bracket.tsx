@@ -297,12 +297,11 @@ function GroupTable({ group }: { group: typeof WC_GROUPS[0] }) {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
-// Approximate dates for SF-bridge (Kvartsfinal) rounds — not yet in DB
 const QF_BRIDGE_DATES = [
-  "2026-07-09T17:00:00Z", // Left QF-1 (9 juli 19:00 sv)
-  "2026-07-10T19:00:00Z", // Left QF-2 (10 juli 21:00 sv)
-  "2026-07-11T17:00:00Z", // Right QF-1 (11 juli 19:00 sv)
-  "2026-07-12T19:00:00Z", // Right QF-2 (12 juli 21:00 sv)
+  "2026-07-09T17:00:00Z",
+  "2026-07-10T19:00:00Z",
+  "2026-07-11T17:00:00Z",
+  "2026-07-12T19:00:00Z",
 ];
 
 function BracketPage() {
@@ -312,7 +311,7 @@ function BracketPage() {
       const { data, error } = await supabase
         .from("matches")
         .select("match_number,stage,kickoff,home_team,away_team,home_score,away_score,finished")
-        .in("stage", ["r16", "r8", "qf", "sf", "third", "final"])
+        .in("stage", ["r16", "r8", "qf", "sf", "third", "final"] as any)
         .order("match_number");
       if (error) throw error;
       return data as KO[];
@@ -321,17 +320,23 @@ function BracketPage() {
   });
 
   const r16 = (koMatches ?? []).filter(m => m.stage === "r16");
-  const qf  = (koMatches ?? []).filter(m => m.stage === "r8");
+  const r8  = (koMatches ?? []).filter(m => m.stage === "r8");
+  const kvf = (koMatches ?? []).filter(m => m.stage === "qf");
   const sf  = (koMatches ?? []).filter(m => m.stage === "sf");
   const bronze = (koMatches ?? []).find(m => m.stage === "third") ?? null;
   const final  = (koMatches ?? []).find(m => m.stage === "final") ?? null;
 
   const r16L = r16.slice(0, 8);
   const r16R = r16.slice(8, 16);
-  const qfL  = qf.slice(0, 4);
-  const qfR  = qf.slice(4, 8);
+  const r8L  = r8.slice(0, 4);
+  const r8R  = r8.slice(4, 8);
+  const kvfL = kvf.slice(0, 2);
+  const kvfR = kvf.slice(2, 4);
   const sf1  = sf[0] ?? null;
   const sf2  = sf[1] ?? null;
+
+  const kvfLHasTeams = kvfL.some(m => m.home_team && m.home_team !== "TBD");
+  const kvfRHasTeams = kvfR.some(m => m.home_team && m.home_team !== "TBD");
 
   const N = 8; // total slot rows
 
@@ -356,9 +361,12 @@ function BracketPage() {
               {/* ── LEFT SIDE ── */}
               <BracketCol items={r16L} slotsEach={1} totalSlots={N} label="16-delsfinal" />
               <Connectors count={4} slotsPerGroup={2} totalSlots={N} />
-              <BracketCol items={qfL} slotsEach={2} totalSlots={N} label="Åttondelsfinal" />
+              <BracketCol items={r8L} slotsEach={2} totalSlots={N} label="Åttondelsfinal" />
               <Connectors count={2} slotsPerGroup={4} totalSlots={N} />
-              <TbdCol dates={QF_BRIDGE_DATES.slice(0, 2)} slotsEach={4} totalSlots={N} label="Kvartsfinal" />
+              {kvfLHasTeams
+                ? <BracketCol items={kvfL} slotsEach={4} totalSlots={N} label="Kvartsfinal" />
+                : <TbdCol dates={QF_BRIDGE_DATES.slice(0, 2)} slotsEach={4} totalSlots={N} label="Kvartsfinal" />
+              }
 
               {/* ── CENTER ── */}
               <div
@@ -388,9 +396,12 @@ function BracketPage() {
               </div>
 
               {/* ── RIGHT SIDE (mirror) ── */}
-              <TbdCol dates={QF_BRIDGE_DATES.slice(2, 4)} slotsEach={4} totalSlots={N} label="Kvartsfinal" />
+              {kvfRHasTeams
+                ? <BracketCol items={kvfR} slotsEach={4} totalSlots={N} label="Kvartsfinal" />
+                : <TbdCol dates={QF_BRIDGE_DATES.slice(2, 4)} slotsEach={4} totalSlots={N} label="Kvartsfinal" />
+              }
               <ConnectorsLeft count={2} slotsPerGroup={4} totalSlots={N} />
-              <BracketCol items={qfR} slotsEach={2} totalSlots={N} label="Åttondelsfinal" />
+              <BracketCol items={r8R} slotsEach={2} totalSlots={N} label="Åttondelsfinal" />
               <ConnectorsLeft count={4} slotsPerGroup={2} totalSlots={N} />
               <BracketCol items={r16R} slotsEach={1} totalSlots={N} label="16-delsfinal" />
 
