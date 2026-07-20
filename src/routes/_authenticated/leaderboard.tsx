@@ -14,6 +14,9 @@ import { WC_GROUPS } from "@/lib/wcGroups";
 
 type TabValue = "table" | "prizes" | "tips" | "stats";
 
+// Kvar i poolen (poäng/skräll-bonus påverkas annars för alla), men exkluderade från prispotten och vinnarna.
+const EXCLUDED_FROM_PRIZES = ["Micki", "Limpan"];
+
 export const Route = createFileRoute("/_authenticated/leaderboard")({
   component: LeaderboardPage,
   validateSearch: (search: Record<string, unknown>): { tab?: TabValue } => {
@@ -351,6 +354,10 @@ function PrizeLeaderSection({ approvedRows, poolMemberIds, entryFee }: { approve
 
   if (!matches || !picks || !profiles || approvedRows.length === 0) return null;
 
+  const prizeEligibleRows = approvedRows.filter(
+    (r) => !EXCLUDED_FROM_PRIZES.includes((r.display_name ?? "").trim())
+  );
+
   const nameById = new Map(profiles.map((p) => [p.id, p.display_name]));
   const matchById = new Map(matches.map((m) => [m.id, m]));
   const sign = (n: number) => (n > 0 ? 1 : n < 0 ? -1 : 0);
@@ -412,28 +419,28 @@ function PrizeLeaderSection({ approvedRows, poolMemberIds, entryFee }: { approve
   };
 
   // Sortera unika poängnivåer för 1:a/2:a
-  const totalSorted = [...approvedRows].sort((a, b) => (b.total_points ?? 0) - (a.total_points ?? 0));
+  const totalSorted = [...prizeEligibleRows].sort((a, b) => (b.total_points ?? 0) - (a.total_points ?? 0));
   const firstScore = totalSorted[0]?.total_points ?? null;
   const firstPlace = totalSorted.filter((r) => r.total_points === firstScore);
   // Andraplats = nästa unika poängnivå
   const secondScore = totalSorted.find((r) => r.total_points !== firstScore)?.total_points ?? null;
   const secondPlace = secondScore !== null ? totalSorted.filter((r) => r.total_points === secondScore) : [];
 
-  const matchLeaders = topTied(approvedRows, (r) => r.match_points ?? 0);
-  const oracleLeaders = topTied(approvedRows, (r) => r.longterm_points ?? 0);
+  const matchLeaders = topTied(prizeEligibleRows, (r) => r.match_points ?? 0);
+  const oracleLeaders = topTied(prizeEligibleRows, (r) => r.longterm_points ?? 0);
 
   const upsetPool = (profiles ?? [])
     .map((p) => ({ id: p.id, display_name: p.display_name, upsets: upsets.get(p.id) ?? 0 }))
-    .filter((p) => approvedRows.some((r) => r.user_id === p.id));
+    .filter((p) => prizeEligibleRows.some((r) => r.user_id === p.id));
   const upsetLeaders = topTied(upsetPool, (p) => p.upsets);
   const upsetLeadersFiltered = upsetLeaders.length > 0 && upsetLeaders[0].upsets > 0 ? upsetLeaders : [];
 
-  const lastPlace = bottomTied(approvedRows, (r) => r.total_points ?? 0);
+  const lastPlace = bottomTied(prizeEligibleRows, (r) => r.total_points ?? 0);
 
   type Entry = { name: string; detail: string };
   type Prize = { key: string; emoji: string; label: string; entries: Entry[]; suffix?: string };
 
-  const pot = entryFee != null && poolMemberIds != null ? approvedRows.length * entryFee : null;
+  const pot = entryFee != null && poolMemberIds != null ? prizeEligibleRows.length * entryFee : null;
 
   const prizes: Prize[] = [
     {
@@ -476,7 +483,7 @@ function PrizeLeaderSection({ approvedRows, poolMemberIds, entryFee }: { approve
           <div className="rounded-xl bg-muted p-3 text-center space-y-1">
             <p className="text-xs text-muted-foreground uppercase tracking-wide">Total prispott</p>
             <p className="text-3xl font-bold text-primary">{fmt(pot)} kr</p>
-            <p className="text-xs text-muted-foreground">{approvedRows.length} deltagare × {entryFee} kr</p>
+            <p className="text-xs text-muted-foreground">{prizeEligibleRows.length} deltagare × {entryFee} kr</p>
           </div>
           <div className="space-y-0">
             {[
